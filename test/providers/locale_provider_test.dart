@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:blinking/providers/locale_provider.dart';
-import 'package:blinking/core/config/constants.dart';
+import 'package:micro_habits/providers/locale_provider.dart';
+import 'package:micro_habits/core/config/constants.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

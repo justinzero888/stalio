@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:blinking/models/routine.dart';
-import 'package:blinking/models/entry.dart';
-import 'package:blinking/providers/routine_provider.dart';
-import 'package:blinking/providers/entry_provider.dart';
-import 'package:blinking/providers/locale_provider.dart';
-import 'package:blinking/repositories/routine_repository.dart';
-import 'package:blinking/repositories/entry_repository.dart';
-import 'package:blinking/core/services/storage_service.dart';
-import 'package:blinking/screens/home/home_screen.dart';
+import 'package:micro_habits/models/routine.dart';
+import 'package:micro_habits/models/entry.dart';
+import 'package:micro_habits/providers/routine_provider.dart';
+import 'package:micro_habits/providers/entry_provider.dart';
+import 'package:micro_habits/providers/locale_provider.dart';
+import 'package:micro_habits/repositories/routine_repository.dart';
+import 'package:micro_habits/repositories/entry_repository.dart';
+import 'package:micro_habits/core/services/storage_service.dart';
+import 'package:micro_habits/screens/home/home_screen.dart';
 
 class _FakeStorage extends StorageService {
   final List<Routine> routines;

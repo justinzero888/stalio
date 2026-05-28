@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:blinking/models/entry.dart';
-import 'package:blinking/models/tag.dart';
-import 'package:blinking/providers/entry_provider.dart';
-import 'package:blinking/providers/locale_provider.dart';
-import 'package:blinking/providers/tag_provider.dart';
-import 'package:blinking/providers/card_provider.dart';
-import 'package:blinking/repositories/entry_repository.dart';
-import 'package:blinking/repositories/tag_repository.dart';
-import 'package:blinking/core/services/storage_service.dart';
-import 'package:blinking/screens/moment/entry_detail_screen.dart';
+import 'package:micro_habits/models/entry.dart';
+import 'package:micro_habits/models/tag.dart';
+import 'package:micro_habits/providers/entry_provider.dart';
+import 'package:micro_habits/providers/locale_provider.dart';
+import 'package:micro_habits/providers/tag_provider.dart';
+import 'package:micro_habits/providers/card_provider.dart';
+import 'package:micro_habits/repositories/entry_repository.dart';
+import 'package:micro_habits/repositories/tag_repository.dart';
+import 'package:micro_habits/core/services/storage_service.dart';
+import 'package:micro_habits/screens/moment/entry_detail_screen.dart';
 
 /// Fake StorageService — no platform channels needed.
 class _FakeStorage extends StorageService {

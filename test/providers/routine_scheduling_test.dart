@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:blinking/models/routine.dart';
-import 'package:blinking/models/schedule.dart';
+import 'package:micro_habits/models/routine.dart';
+import 'package:micro_habits/models/schedule.dart';
 
 void main() {
   group('Routine Scheduling', () {

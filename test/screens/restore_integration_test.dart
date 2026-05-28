@@ -5,7 +5,7 @@ import 'package:archive/archive_io.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-import 'package:blinking/core/services/storage_service.dart';
+import 'package:micro_habits/core/services/storage_service.dart';
 
 /// Mock PathProvider for testing
 class MockPathProvider extends PathProviderPlatform {

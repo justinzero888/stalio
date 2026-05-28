@@ -7,8 +7,8 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:blinking/core/services/storage_service.dart';
-import 'package:blinking/core/services/export_service.dart';
+import 'package:micro_habits/core/services/storage_service.dart';
+import 'package:micro_habits/core/services/export_service.dart';
 
 /// Mock PathProvider for testing
 class MockPathProvider extends PathProviderPlatform {

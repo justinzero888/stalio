@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:blinking/core/services/export_service.dart';
-import 'package:blinking/core/services/storage_service.dart';
-import 'package:blinking/models/entry.dart' show Entry, EntryType;
-import 'package:blinking/models/tag.dart';
-import 'package:blinking/models/routine.dart';
+import 'package:micro_habits/core/services/export_service.dart';
+import 'package:micro_habits/core/services/storage_service.dart';
+import 'package:micro_habits/models/entry.dart' show Entry, EntryType;
+import 'package:micro_habits/models/tag.dart';
+import 'package:micro_habits/models/routine.dart';
 
 class _FakeStorage extends StorageService {
   final List<Entry> _entries;

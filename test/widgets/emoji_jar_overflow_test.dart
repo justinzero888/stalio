@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:blinking/providers/locale_provider.dart';
-import 'package:blinking/widgets/emoji_jar.dart';
+import 'package:micro_habits/providers/locale_provider.dart';
+import 'package:micro_habits/widgets/emoji_jar.dart';
 
 /// EmojiJarWidget._maxVisible (private) — keep in sync if widget changes.
 const int _maxVisible = 30;
