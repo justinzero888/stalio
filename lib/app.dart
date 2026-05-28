@@ -25,7 +25,6 @@ import 'screens/onboarding/transition_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/add_entry_screen.dart';
 import 'screens/purchase/paywall_screen.dart';
-import 'widgets/entry_card.dart';
 import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
 
@@ -257,7 +256,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           BottomNavigationBarItem(
             icon: Semantics(identifier: 'nav_routine', child: const Icon(Icons.check_circle_outline)),
-            label: l10n.routine,
+            label: 'Habits',
           ),
           BottomNavigationBarItem(
             icon: Semantics(identifier: 'nav_insights', child: const Icon(Icons.insights)),
