@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/theme.dart';
 import 'core/services/storage_service.dart';
-import 'core/services/entitlement_service.dart';
-import 'core/services/purchases_service.dart';
 import 'repositories/repositories.dart';
 import 'providers/routine_provider.dart';
 import 'providers/entry_provider.dart';
@@ -13,17 +11,12 @@ import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/jar_provider.dart';
 import 'providers/summary_provider.dart';
-import 'providers/ai_persona_provider.dart';
-import 'providers/llm_config_notifier.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/moment/moment_screen.dart';
 import 'screens/routine/routine_screen.dart';
 import 'screens/cherished/cherished_memory_screen.dart';
 import 'screens/settings/settings_screen.dart';
-import 'screens/onboarding/transition_screen.dart';
-import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/add_entry_screen.dart';
-import 'screens/purchase/paywall_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
 
@@ -31,9 +24,8 @@ import 'core/services/export_service.dart';
 
 class BlinkingApp extends StatelessWidget {
   final StorageService storageService;
-  final PurchasesService purchasesService;
 
-  const BlinkingApp({super.key, required this.storageService, required this.purchasesService});
+  const BlinkingApp({super.key, required this.storageService});
 
   @override
   Widget build(BuildContext context) {
@@ -83,24 +75,6 @@ class BlinkingApp extends StatelessWidget {
           update: (context, entryProvider, jar) =>
               jar!..update(entryProvider),
         ),
-
-        // AiPersonaProvider — avatar, name, personality
-        ChangeNotifierProvider(create: (_) => AiPersonaProvider()),
-
-        // LlmConfigNotifier — signals when API key / provider changes
-        ChangeNotifierProvider(create: (_) => LlmConfigNotifier()),
-
-        // EntitlementService — preview / restricted / paid state machine
-        ChangeNotifierProvider(create: (_) {
-          final service = EntitlementService();
-          SharedPreferences.getInstance().then((prefs) {
-            service.init(prefs);
-          });
-          return service;
-        }),
-
-        // PurchasesService — RevenueCat IAP
-        ChangeNotifierProvider<PurchasesService>.value(value: purchasesService),
 
         // SummaryProvider — depends on EntryProvider + RoutineProvider
         ChangeNotifierProxyProvider2<EntryProvider, RoutineProvider,
@@ -154,22 +128,6 @@ class _MainScreenState extends State<MainScreen> {
       const InsightsScreen(),
       const SettingsScreen(),
     ];
-    _checkOnboarding();
-  }
-
-  Future<void> _checkOnboarding() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-
-    final completed = await OnboardingScreen.hasCompleted();
-    if (!completed && mounted) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-      );
-      await _seedWelcomeEntry();
-    }
-    _checkTransitionScreen();
   }
 
   Future<void> _seedWelcomeEntry() async {
@@ -202,23 +160,6 @@ class _MainScreenState extends State<MainScreen> {
     );
 
     await prefs.setBool('welcome_entry_seeded', true);
-  }
-
-  Future<void> _checkTransitionScreen() async {
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-
-    final entitlement = context.read<EntitlementService>();
-    final shown = await TransitionScreen.hasBeenShown();
-
-    if (!shown &&
-        entitlement.isRestricted &&
-        entitlement.wasPreview) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const TransitionScreen()),
-      );
-    }
   }
 
   void _onTabTapped(int index) {
@@ -273,14 +214,6 @@ class _MainScreenState extends State<MainScreen> {
       return FloatingActionButton(
         heroTag: 'main_add_routine_fab',
         onPressed: () {
-          final entitlement = context.read<EntitlementService>();
-          if (!entitlement.canAddHabit) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PaywallScreen()),
-            );
-            return;
-          }
           _routineKey.currentState?.showAddRoutineDialog(context);
         },
         child: Semantics(
