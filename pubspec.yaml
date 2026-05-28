@@ -1,0 +1,85 @@
+name: micro_habits
+description: "A personal habit tracking and note-taking app."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  provider: ^6.1.2
+
+  # Local Storage
+  shared_preferences: ^2.3.5
+  path_provider: ^2.1.5
+  sqflite: ^2.4.2
+  crypto: ^3.0.7
+
+  # Media
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.4.0
+  permission_handler: ^11.3.1
+
+  # Utils
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  collection: ^1.19.1
+  archive: ^4.0.4
+  share_plus: ^12.0.2
+  url_launcher: ^6.3.1
+  http: ^1.2.0
+  file_picker: ^8.1.7
+  open_filex: ^4.5.0
+
+  # Charts
+  fl_chart: ^0.70.0
+
+  # IAP
+  purchases_flutter: ^9.8.0
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+  flutter_tts: ^4.2.5
+
+  path: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+  sqflite_common_ffi: ^2.3.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#0D3B34"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+  web:
+    generate: false
+  macos:
+    generate: false
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/icons/
+    - assets/images/
+    - assets/avatars/
+    - assets/cards/
+  fonts:
+    - family: MaShanZheng
+      fonts:
+        - asset: assets/fonts/MaShanZheng-Regular.ttf
