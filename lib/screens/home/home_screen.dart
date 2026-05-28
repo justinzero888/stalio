@@ -9,7 +9,6 @@ import '../../providers/locale_provider.dart';
 import '../../providers/jar_provider.dart';
 import '../../models/routine.dart';
 import '../../models/entry.dart';
-import '../../core/services/entitlement_service.dart';
 import '../../widgets/calendar_widget.dart';
 import '../../widgets/entry_card.dart';
 import '../../widgets/emoji_jar.dart';
@@ -359,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
           _EmojiJarSection(
             date: _selectedDate,
-            canUseAI: context.watch<EntitlementService>().canUseAI,
+            canUseAI: true,
           ),
         ],
 
