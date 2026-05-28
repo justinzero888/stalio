@@ -25,7 +25,7 @@ import 'screens/onboarding/transition_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/add_entry_screen.dart';
 import 'screens/purchase/paywall_screen.dart';
-import 'widgets/floating_robot.dart';
+import 'widgets/entry_card.dart';
 import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
 
@@ -238,14 +238,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: _screens,
-          ),
-          FloatingRobotWidget(currentTabIndex: _currentIndex),
-        ],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
