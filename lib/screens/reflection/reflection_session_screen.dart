@@ -11,7 +11,6 @@ import '../../models/lens_set.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/services/llm_service.dart';
 import '../../core/services/prompt_assembler.dart';
-import '../../widgets/card_builder_sheet.dart';
 
 class ReflectionSessionScreen extends StatefulWidget {
   const ReflectionSessionScreen({super.key});
@@ -494,27 +493,6 @@ class _ReflectionSessionScreenState extends State<ReflectionSessionScreen> {
                       icon: const Icon(Icons.bookmark_add, size: 18),
                       label: Text(_isZh ? '保存反思' : 'Save Reflection'),
                     ),
-            ),
-          ),
-        // Save as Keepsake — only visible after save
-        if (_reflectionSaved && hasContent)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Center(
-              child: Semantics(
-                identifier: 'btn_reflection_save_keepsake',
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    final content = _cards.isNotEmpty ? _cards.first.card : '';
-                    CardBuilderSheet.show(
-                      context,
-                      initialContent: content,
-                    );
-                  },
-                  icon: const Icon(Icons.photo_album, size: 18),
-                  label: Text(_isZh ? '保存为纪念' : 'Save as Keepsake'),
-                ),
-              ),
             ),
           ),
       ],

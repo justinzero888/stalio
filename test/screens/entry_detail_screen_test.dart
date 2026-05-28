@@ -6,7 +6,6 @@ import 'package:micro_habits/models/tag.dart';
 import 'package:micro_habits/providers/entry_provider.dart';
 import 'package:micro_habits/providers/locale_provider.dart';
 import 'package:micro_habits/providers/tag_provider.dart';
-import 'package:micro_habits/providers/card_provider.dart';
 import 'package:micro_habits/repositories/entry_repository.dart';
 import 'package:micro_habits/repositories/tag_repository.dart';
 import 'package:micro_habits/core/services/storage_service.dart';
@@ -42,7 +41,6 @@ Widget _wrap(Widget child, {List<Entry> entries = const []}) {
       ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ChangeNotifierProvider(create: (_) => _tagProvider()),
       ChangeNotifierProvider(create: (_) => _entryProvider(entries: entries)),
-      ChangeNotifierProvider(create: (_) => CardProvider(_FakeStorage())..loadForTest()),
     ],
     child: MaterialApp(home: child),
   );

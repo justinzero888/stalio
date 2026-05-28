@@ -7,7 +7,6 @@ import '../../providers/locale_provider.dart';
 import '../../models/entry.dart';
 import '../../core/services/llm_service.dart';
 import '../../core/services/soft_prompt_service.dart';
-import '../../widgets/card_builder_sheet.dart';
 
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
@@ -518,20 +517,6 @@ class _AssistantScreenState extends State<AssistantScreen> {
           ],
         ),
         actions: [
-          if (_hasSavedReflection)
-            Semantics(
-              identifier: 'btn_assistant_save_keepsake',
-              child: IconButton(
-                icon: const Icon(Icons.photo_album_outlined),
-                tooltip: isZh ? '保存为纪念' : 'Save as Keepsake',
-                onPressed: () {
-                  CardBuilderSheet.show(
-                    context,
-                    initialContent: _lastSavedReflectionContent,
-                  );
-                },
-              ),
-            ),
           if (hasRealMessages)
             IconButton(
               icon: const Icon(Icons.save_alt),

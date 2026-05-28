@@ -6,17 +6,13 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/services/file_service.dart';
 import '../../models/entry.dart';
-import '../../models/note_card.dart';
 import '../../providers/entry_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/tag_chip.dart';
-import '../../widgets/card_builder_sheet.dart';
-import '../../providers/card_provider.dart';
 import '../add_entry_screen.dart';
 import '../chorus/post_to_chorus_sheet.dart';
-import 'card_preview_screen.dart';
 
 class EntryDetailScreen extends StatefulWidget {
   final Entry entry;
@@ -95,14 +91,6 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
               ),
             ),
           ),
-          Semantics(
-            identifier: 'btn_save_keepsake',
-            child: IconButton(
-              icon: const Icon(Icons.photo_library_outlined),
-              tooltip: isZh ? '保存为纪念' : 'Save as Keepsake',
-              onPressed: () => _handleSaveAsKeepsake(context, entry),
-            ),
-          ),
           IconButton(
             icon: const Icon(Icons.public_outlined),
             tooltip: isZh ? '发布到 Chorus' : 'Post to Chorus',
@@ -154,12 +142,6 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
               const SizedBox(height: 12),
               _MediaGrid(mediaUrls: entry.mediaUrls),
             ],
-            // Keepsake badge
-            const SizedBox(height: 16),
-            _KeepsakeBadge(
-              entryId: entry.id,
-              onEditKeepsake: (card) => _handleEditKeepsake(context, card),
-            ),
           ],
         ),
       ),
@@ -249,78 +231,6 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
     return entryDay.isBefore(todayDay);
   }
 
-  Future<void> _handleSaveAsKeepsake(BuildContext context, Entry entry) async {
-    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-    final tagProvider = context.read<TagProvider>();
-    final tags = tagProvider.tags
-        .where((t) => entry.tagIds.contains(t.id))
-        .map((t) => t.name)
-        .toList();
-    final photoPath = entry.mediaUrls.isNotEmpty ? entry.mediaUrls.first : null;
-
-    await CardBuilderSheet.show(
-      context,
-      entryId: entry.id,
-      initialContent: entry.content,
-      initialEmotion: entry.emotion,
-      initialTags: tags,
-      initialPhotoPath: photoPath,
-      entryDate: entry.createdAt,
-    );
-  }
-
-  void _handleEditKeepsake(BuildContext context, NoteCard card) {
-    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-    CardBuilderSheet.show(
-      context,
-      entryId: card.entryIds.isNotEmpty ? card.entryIds.first : null,
-      initialContent: card.cardContent ?? '',
-      initialEmotion: card.emotion,
-      initialTags: card.displayTags,
-      entryDate: card.createdAt,
-    );
-  }
-}
-
-class _KeepsakeBadge extends StatelessWidget {
-  final String entryId;
-  final void Function(NoteCard card) onEditKeepsake;
-  const _KeepsakeBadge({required this.entryId, required this.onEditKeepsake});
-
-  @override
-  Widget build(BuildContext context) {
-    final cardProvider = context.watch<CardProvider>();
-    final card = cardProvider.getCardByEntryId(entryId);
-    if (card == null) return const SizedBox.shrink();
-
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
-    final template = cardProvider.getTemplateById(card.templateId);
-    final templateName = template?.displayNameFor(isZh) ?? '';
-
-    return Center(
-      child: Semantics(
-        identifier: 'badge_keepsake',
-        child: ActionChip(
-          avatar: const Icon(Icons.photo_album, size: 18),
-          label: Text(
-            isZh ? '纪念 · $templateName' : 'Keepsake · $templateName',
-            style: const TextStyle(fontSize: 13),
-          ),
-          onPressed: () async {
-            final result = await Navigator.push<String>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CardPreviewScreen(card: card),
-              ),
-            );
-            if (result == 'edit' && context.mounted) {
-              onEditKeepsake(card);
-            }
-          },
-        ),
-      ),
-    );
-  }
 }
 
 class _MediaGrid extends StatefulWidget {

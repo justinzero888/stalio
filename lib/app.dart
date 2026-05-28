@@ -13,7 +13,6 @@ import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/jar_provider.dart';
 import 'providers/summary_provider.dart';
-import 'providers/card_provider.dart';
 import 'providers/ai_persona_provider.dart';
 import 'providers/llm_config_notifier.dart';
 import 'screens/home/home_screen.dart';
@@ -76,11 +75,6 @@ class BlinkingApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => TagProvider(tagRepository)..loadTags(),
-        ),
-
-        // CardProvider — templates, folders, note cards
-        ChangeNotifierProvider(
-          create: (_) => CardProvider(storageService)..load(),
         ),
 
         // JarProvider — depends on EntryProvider
