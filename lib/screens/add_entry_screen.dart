@@ -107,27 +107,61 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   }
 
   Future<void> _startVoiceTranscribe() async {
-    final available = await _speech.initialize();
-    if (!available) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Speech recognition not available')),
-        );
-      }
+    if (_isListening) {
+      _stopVoiceTranscribe();
       return;
     }
-    setState(() => _isListening = true);
-    _transcribedText = '';
 
-    _speech.listen(
-      onResult: (result) {
+    try {
+      bool available = _speech.isAvailable;
+      if (!available) {
+        available = await _speech.initialize(
+          onStatus: (status) {
+            if (status == stt.SpeechToText.doneStatus ||
+                status == stt.SpeechToText.notListeningStatus) {
+              if (mounted) setState(() => _isListening = false);
+            }
+          },
+          onError: (error) {
+            if (mounted) setState(() => _isListening = false);
+          },
+        );
+      }
+      if (!available) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Speech recognition is not available on this device')),
+          );
+        }
+        return;
+      }
+      if (mounted) {
         setState(() {
-          _transcribedText = result.recognizedWords;
+          _isListening = true;
+          _transcribedText = '';
         });
-      },
-      listenFor: const Duration(seconds: 60),
-      pauseFor: const Duration(seconds: 3),
-    );
+      }
+      _speech.listen(
+        onResult: (result) {
+          if (mounted) {
+            setState(() {
+              _transcribedText = result.recognizedWords;
+            });
+          }
+        },
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 3),
+        cancelOnError: false,
+        partialResults: true,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isListening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Speech recognition is not available on this device')),
+        );
+      }
+    }
   }
 
   void _stopVoiceTranscribe() {
