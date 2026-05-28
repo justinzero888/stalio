@@ -29,6 +29,30 @@ class StorageService {
     await _dbService.migrateFromSharedPreferences();
 
     _initialized = true;
+
+    // Initialize default tags if none exist
+    final tags = await getTags();
+    if (tags.isEmpty) {
+      for (final tag in _getDefaultTags()) {
+        await addTag(tag);
+      }
+    } else {
+      // Ensure system tags exist for existing users (migration)
+      final tagIds = tags.map((t) => t.id).toSet();
+      for (final tag in _getSystemTags()) {
+        if (!tagIds.contains(tag.id)) {
+          await addTag(tag);
+        }
+      }
+    }
+
+    // Initialize default routines if none exist
+    final routines = await getRoutines();
+    if (routines.isEmpty) {
+      for (final routine in _getDefaultRoutines()) {
+        await addRoutine(routine);
+      }
+    }
   }
 
   /// System tags — always exist, locked from editing/deletion
