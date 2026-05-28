@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
-import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:archive/archive.dart';
@@ -31,30 +29,7 @@ class StorageService {
     await _dbService.migrateFromSharedPreferences();
 
     _initialized = true;
-
-    // Initialize default tags if none exist
-    final tags = await getTags();
-    if (tags.isEmpty) {
-      for (final tag in _getDefaultTags()) {
-        await addTag(tag);
-      }
-    } else {
-      // Ensure system tags exist for existing users (migration)
-      final tagIds = tags.map((t) => t.id).toSet();
-      for (final tag in _getSystemTags()) {
-        if (!tagIds.contains(tag.id)) {
-          await addTag(tag);
-        }
-      }
-    }
-
-    // Initialize default routines if none exist
-    final routines = await getRoutines();
-    if (routines.isEmpty) {
-      for (final routine in _getDefaultRoutines()) {
-        await addRoutine(routine);
-      }
-    }
+  }
 
   /// System tags — always exist, locked from editing/deletion
   List<Tag> _getSystemTags() {
@@ -452,26 +427,30 @@ class StorageService {
     await _prefs.setString('blinking_settings', jsonString);
   }
 
+  // ============ SETTINGS ============
+
   Future<String> getLanguage() async {
-    final settings = await getSettings();
-    return settings['language'] as String? ?? 'zh';
+    return _prefs.getString('language') ?? 'en';
   }
 
   Future<void> setLanguage(String language) async {
-    final settings = await getSettings();
-    settings['language'] = language;
-    await saveSettings(settings);
+    await _prefs.setString('language', language);
+  }
+
+  bool getVoiceEnabled() {
+    return _prefs.getBool('voice_notifications_enabled') ?? false;
+  }
+
+  Future<void> setVoiceEnabled(bool enabled) async {
+    await _prefs.setBool('voice_notifications_enabled', enabled);
   }
 
   Future<String> getTheme() async {
-    final settings = await getSettings();
-    return settings['theme'] as String? ?? 'light';
+    return _prefs.getString('theme') ?? 'light';
   }
 
   Future<void> setTheme(String theme) async {
-    final settings = await getSettings();
-    settings['theme'] = theme;
-    await saveSettings(settings);
+    await _prefs.setString('theme', theme);
   }
 
   // ============ EXPORT / IMPORT ============
@@ -627,3 +606,4 @@ class StorageService {
     await db.delete('completions');
     await _prefs.remove('sqlite_migrated');
   }
+}
