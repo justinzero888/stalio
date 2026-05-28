@@ -167,24 +167,13 @@ class _TagList extends StatefulWidget {
 }
 
 class _TagListState extends State<_TagList> {
-  List<Tag> _tags = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadTags();
-  }
-
-  void _loadTags() {
-    final tagProvider = context.read<TagProvider>();
-    setState(() => _tags = tagProvider.tags);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final tags = context.watch<TagProvider>().tags;
+
     return Column(
       children: [
-        ..._tags.map((tag) => ListTile(
+        ...tags.map((tag) => ListTile(
           leading: CircleAvatar(
             radius: 12,
             backgroundColor: Color(int.parse(tag.color.replaceFirst('#', '0xFF'))),
@@ -270,7 +259,6 @@ class _TagListState extends State<_TagList> {
                 final nameEn = nameEnCtrl.text.trim().isEmpty ? name : nameEnCtrl.text.trim();
                 tagProvider.addTag(name: name, nameEn: nameEn, color: color);
                 Navigator.pop(ctx);
-                _loadTags();
               },
               child: Text(widget.isZh ? '添加' : 'Add'),
             ),
@@ -336,7 +324,6 @@ class _TagListState extends State<_TagList> {
               onPressed: () {
                 context.read<TagProvider>().deleteTag(tag.id);
                 Navigator.pop(ctx);
-                _loadTags();
               },
               child: Text(widget.isZh ? '删除' : 'Delete', style: const TextStyle(color: Colors.red)),
             ),
@@ -350,7 +337,6 @@ class _TagListState extends State<_TagList> {
                   color: color,
                 ));
                 Navigator.pop(ctx);
-                _loadTags();
               },
               child: Text(widget.isZh ? '保存' : 'Save'),
             ),

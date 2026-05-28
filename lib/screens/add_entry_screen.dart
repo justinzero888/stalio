@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:uuid/uuid.dart';
 import 'dart:io';
 import '../providers/entry_provider.dart';
@@ -26,7 +26,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _itemController = TextEditingController();
   final FocusNode _itemFocusNode = FocusNode();
-  final ImagePicker _picker = ImagePicker();
   final FileService _fileService = FileService();
   final _uuid = const Uuid();
 
@@ -35,6 +34,10 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   String? _selectedEmotion;
   EntryFormat _selectedFormat = EntryFormat.note;
   final List<ListItem> _listItems = [];
+
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  String _transcribedText = '';
 
   @override
   void initState() {
@@ -103,44 +106,41 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (image != null) {
-      final media = Media(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        entryId: '',
-        type: MediaType.image,
-        localPath: image.path,
-      );
-      setState(() {
-        _mediaItems.add(media);
-      });
+  Future<void> _startVoiceTranscribe() async {
+    final available = await _speech.initialize();
+    if (!available) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Speech recognition not available')),
+        );
+      }
+      return;
     }
+    setState(() => _isListening = true);
+    _transcribedText = '';
+
+    _speech.listen(
+      onResult: (result) {
+        setState(() {
+          _transcribedText = result.recognizedWords;
+        });
+      },
+      listenFor: const Duration(seconds: 60),
+      pauseFor: const Duration(seconds: 3),
+    );
   }
 
-  Future<void> _takePhoto() async {
-    final XFile? photo = await _picker.pickImage(
-      source: ImageSource.camera,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (photo != null) {
-      final media = Media(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        entryId: '',
-        type: MediaType.image,
-        localPath: photo.path,
-      );
-      setState(() {
-        _mediaItems.add(media);
-      });
-    }
+  void _stopVoiceTranscribe() {
+    _speech.stop();
+    setState(() {
+      _isListening = false;
+      if (_transcribedText.isNotEmpty) {
+        final current = _textController.text;
+        _textController.text = current.isEmpty
+            ? _transcribedText
+            : '$current $_transcribedText';
+      }
+    });
   }
 
   void _removeMedia(int index) {
@@ -634,17 +634,52 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         runSpacing: 8,
         children: [
           _MediaButton(
-            icon: Icons.photo_library,
-            label: isZh ? '相册' : 'Photo',
-            onPressed: _pickImage,
-          ),
-          _MediaButton(
-            icon: Icons.camera_alt,
-            label: isZh ? '拍照' : 'Camera',
-            onPressed: _takePhoto,
+            icon: _isListening ? Icons.mic : Icons.mic_none,
+            label: _isListening
+                ? (isZh ? '录音中...' : 'Listening...')
+                : (isZh ? '语音输入' : 'Voice'),
+            color: _isListening ? Colors.red : null,
+            onPressed: _isListening ? _stopVoiceTranscribe : _startVoiceTranscribe,
           ),
         ],
       ),
+      if (_isListening) ...[
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.red.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.red.shade200),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.mic, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Text(
+                    isZh ? '正在聆听... 点击停止' : 'Listening... tap to stop',
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _stopVoiceTranscribe,
+                    child: Text(isZh ? '完成' : 'Done'),
+                  ),
+                ],
+              ),
+              if (_transcribedText.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _transcribedText,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
       const SizedBox(height: 16),
       if (_mediaItems.isNotEmpty) ...[
         Text(
@@ -760,19 +795,26 @@ class _MediaButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
+  final Color? color;
 
   const _MediaButton({
     required this.icon,
     required this.label,
     required this.onPressed,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(label),
+      icon: Icon(icon, color: color),
+      label: Text(label, style: color != null ? TextStyle(color: color) : null),
+      style: color != null
+          ? ElevatedButton.styleFrom(
+              foregroundColor: color,
+            )
+          : null,
     );
   }
 }
