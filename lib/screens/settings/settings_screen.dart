@@ -89,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadLlmSettings();
     _loadAiSettings();
     _loadVoiceSetting();
@@ -812,97 +812,25 @@ class _SettingsScreenState extends State<SettingsScreen>
           leading: const Icon(Icons.archive_outlined),
           title: Text(isZh ? '完整备份 (ZIP)' : 'Full Backup (ZIP)'),
           subtitle: Text(isZh ? '包含所有数据和多媒体文件' : 'All data and media files'),
-          onTap: () async {
-            final entitlement = context.read<EntitlementService>();
-            if (!entitlement.canBackup && entitlement.isRestricted) {
-              if (await SoftPromptService.canShowReengage('backup')) {
-              await SoftPromptService.showReengage(
-                context,
-                triggerKey: 'backup',
-                title: isZh ? '备份功能需要 Pro' : 'Backup requires Pro',
-                body: isZh
-                    ? '跨设备备份与恢复是 Pro 功能。你的笔记仍然安全地保存在本地。'
-                    : 'Backup & restore across devices is part of Pro. Your notes are still safe locally.',
-              );
-              } else {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
-              }
-              return;
-            }
-            _handleBackup(context, isZh);
-          },
+          onTap: () => _handleBackup(context, isZh),
         ))),
         ListTile(
           leading: const Icon(Icons.table_chart_outlined),
           title: Text(isZh ? '导出为 CSV' : 'Export to CSV'),
           subtitle: Text(isZh ? '适用于 Excel 统计' : 'Compatible with Excel'),
-          onTap: () async {
-            final entitlement = context.read<EntitlementService>();
-            if (!entitlement.canExport && entitlement.isRestricted) {
-              if (await SoftPromptService.canShowReengage('export_csv')) {
-              await SoftPromptService.showReengage(
-                context,
-                triggerKey: 'export_csv',
-                title: isZh ? '导出功能需要 Pro' : 'Export requires Pro',
-                body: isZh
-                    ? '数据导出是 Pro 功能。升级后可以导出 CSV 和 JSON。'
-                    : 'Data export is part of Pro. Upgrade to export CSV and JSON.',
-              );
-              } else {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
-              }
-              return;
-            }
-            _handleExportCsv(context, isZh);
-          },
+          onTap: () => _handleExportCsv(context, isZh),
         ),
         ListTile(
           leading: const Icon(Icons.code),
           title: Text(isZh ? '导出为 JSON' : 'Export to JSON'),
           subtitle: Text(isZh ? '仅导出结构化数据' : 'Structured data only'),
-          onTap: () async {
-            final entitlement = context.read<EntitlementService>();
-            if (!entitlement.canExport && entitlement.isRestricted) {
-              if (await SoftPromptService.canShowReengage('export_json')) {
-              await SoftPromptService.showReengage(
-                context,
-                triggerKey: 'export_json',
-                title: isZh ? '导出功能需要 Pro' : 'Export requires Pro',
-                body: isZh
-                    ? '数据导出是 Pro 功能。升级后可以导出 JSON。'
-                    : 'Data export is part of Pro. Upgrade to export JSON.',
-              );
-              } else {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
-              }
-              return;
-            }
-            _handleExportJson(context, isZh);
-          },
+          onTap: () => _handleExportJson(context, isZh),
         ),
         ListTile(
           leading: const Icon(Icons.restore_outlined),
           title: Text(isZh ? '恢复数据' : 'Restore Data'),
           subtitle: Text(isZh ? '从备份文件导入' : 'Import from backup file'),
-          onTap: () async {
-            final entitlement = context.read<EntitlementService>();
-            if (!entitlement.canBackup && entitlement.isRestricted) {
-              if (await SoftPromptService.canShowReengage('restore')) {
-              await SoftPromptService.showReengage(
-                context,
-                triggerKey: 'restore',
-                title: isZh ? '恢复功能需要 Pro' : 'Restore requires Pro',
-                body: isZh
-                    ? '数据恢复是 Pro 功能。升级后可以恢复备份数据。'
-                    : 'Data restore is part of Pro. Upgrade to restore from backup.',
-              );
-              } else {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
-              }
-              return;
-            }
-            _handleRestore(context, isZh);
-          },
+          onTap: () => _handleRestore(context, isZh),
         ),
         MergeSemantics(
           child: Semantics(
@@ -911,49 +839,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           leading: const Icon(Icons.fitness_center_outlined),
           title: Text(isZh ? '导出习惯数据' : 'Export Habits'),
           subtitle: Text(isZh ? '导出所有习惯为 JSON 文件' : 'Export all habits as JSON'),
-          onTap: () async {
-            final entitlement = context.read<EntitlementService>();
-            if (!entitlement.canExport && entitlement.isRestricted) {
-              if (await SoftPromptService.canShowReengage('export_habits')) {
-              await SoftPromptService.showReengage(
-                context,
-                triggerKey: 'export_habits',
-                title: isZh ? '导出功能需要 Pro' : 'Export requires Pro',
-                body: isZh
-                    ? '习惯数据导出是 Pro 功能。'
-                    : 'Habit export is part of Pro.',
-              );
-              } else {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
-              }
-              return;
-            }
-            _handleExportHabits(context, isZh);
-          },
+          onTap: () => _handleExportHabits(context, isZh),
         ))),
         ListTile(
           leading: const Icon(Icons.upload_outlined),
           title: Text(isZh ? '导入习惯数据' : 'Import Habits'),
           subtitle: Text(isZh ? '从 JSON 文件导入习惯' : 'Import habits from JSON file'),
-          onTap: () async {
-            final entitlement = context.read<EntitlementService>();
-            if (!entitlement.canExport && entitlement.isRestricted) {
-              if (await SoftPromptService.canShowReengage('import_habits')) {
-              await SoftPromptService.showReengage(
-                context,
-                triggerKey: 'import_habits',
-                title: isZh ? '导入功能需要 Pro' : 'Import requires Pro',
-                body: isZh
-                    ? '习惯数据导入是 Pro 功能。'
-                    : 'Habit import is part of Pro.',
-              );
-              } else {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallScreen()));
-              }
-              return;
-            }
-            _handleImportHabits(context, isZh);
-          },
+          onTap: () => _handleImportHabits(context, isZh),
         ),
         const Divider(),
         _buildSectionHeader(isZh ? '关于' : 'About'),
@@ -1276,13 +1168,10 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
       body: Column(
         children: [
-          // Entitlement banner — always visible
-          _buildEntitlementBanner(isZh),
           // Tab bar
           TabBar(
             controller: _tabController,
             tabs: [
-              Tab(child: Semantics(identifier: 'settings_tab_ai', child: Text(isZh ? 'AI 个性化' : 'AI Personalization'))),
               Tab(child: Semantics(identifier: 'settings_tab_tags', child: Text(isZh ? '标签管理' : 'Tags'))),
               Tab(child: Semantics(identifier: 'settings_tab_general', child: Text(isZh ? '通用' : 'General'))),
             ],
@@ -1291,7 +1180,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildAITab(isZh),
                 _buildTagsTab(isZh),
                 _buildGeneralTab(isZh),
               ],
