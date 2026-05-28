@@ -6,13 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/services/file_service.dart';
-import '../../core/services/entitlement_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../providers/routine_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/entry_provider.dart';
 import '../../models/routine.dart';
-import '../purchase/paywall_screen.dart';
 
 /// Renders a routine's icon: custom image if set, else emoji fallback.
 Widget _buildRoutineIcon(Routine routine, {double size = 20}) {
@@ -92,26 +90,10 @@ class RoutineScreenState extends State<RoutineScreen>
   }
 
   void showAddRoutineDialog(BuildContext context) {
-    final entitlement = context.read<EntitlementService>();
-    if (!entitlement.canAddHabit) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PaywallScreen()),
-      );
-      return;
-    }
     _RoutineDialog.show(context, existing: null);
   }
 
   void _showEditRoutineDialog(BuildContext context, Routine routine) {
-    final entitlement = context.read<EntitlementService>();
-    if (!entitlement.canEditNote) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PaywallScreen()),
-      );
-      return;
-    }
     _RoutineDialog.show(context, existing: routine);
   }
 }
@@ -235,14 +217,6 @@ class _BuildTab extends StatelessWidget {
   }
 
   void _toggleActive(BuildContext context, Routine routine) {
-    final entitlement = context.read<EntitlementService>();
-    if (!entitlement.canEditNote) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PaywallScreen()),
-      );
-      return;
-    }
     context.read<RoutineProvider>().toggleActive(routine.id);
   }
 }
@@ -777,14 +751,6 @@ class _ManualAddButton extends StatelessWidget {
 
     return TextButton.icon(
       onPressed: () {
-        final entitlement = context.read<EntitlementService>();
-        if (!entitlement.canAddHabit) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const PaywallScreen()),
-          );
-          return;
-        }
         _showPicker(context, adhoc);
       },
       icon: const Icon(Icons.add),
