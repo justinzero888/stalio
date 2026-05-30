@@ -369,14 +369,14 @@ class _SectionCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                Expanded(child: Text(
                   title,
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                ?trailing,
+                ),),
+                if (trailing != null) trailing!,
               ],
             ),
             const SizedBox(height: 12),
@@ -1168,7 +1168,7 @@ class _TopTagsChart extends StatelessWidget {
                     final tagId = topTags[index].tagId;
                     final tag = tagProvider.tags.firstWhere(
                       (t) => t.id == tagId,
-                      orElse: () => tagProvider.tags.first,
+                      orElse: () => tagProvider.tags.isNotEmpty ? tagProvider.tags.first : Tag(id: "", name: "", nameEn: "", color: "#999", createdAt: DateTime.now()),
                     );
                     final name = isZh
                         ? tag.name
@@ -1205,7 +1205,7 @@ class _TopTagsChart extends StatelessWidget {
           barGroups: topTags.asMap().entries.map((e) {
             final tag = tagProvider.tags.firstWhere(
               (t) => t.id == e.value.tagId,
-              orElse: () => tagProvider.tags.first,
+              orElse: () => tagProvider.tags.isNotEmpty ? tagProvider.tags.first : Tag(id: "", name: "", nameEn: "", color: "#999", createdAt: DateTime.now()),
             );
             final color = _parseHexColor(tag.color);
             return BarChartGroupData(
@@ -1482,7 +1482,7 @@ class _TagMoodSection extends StatelessWidget {
         ...correlations.take(5).map((c) {
           final tag = tagProvider.tags.firstWhere(
             (t) => t.id == c.tagId,
-            orElse: () => tagProvider.tags.first,
+            orElse: () => tagProvider.tags.isNotEmpty ? tagProvider.tags.first : Tag(id: "", name: "", nameEn: "", color: "#999", createdAt: DateTime.now()),
           );
           final name = isZh
               ? tag.name
