@@ -1266,7 +1266,7 @@ class _WritingStatsSection extends StatelessWidget {
     final activeDay = summary.mostActiveDayOfWeek;
     final activeHour = summary.mostActiveHour;
 
-    return Row(
+    return SizedBox(height: 100, child: Row(
       children: [
         Expanded(
           child: _MiniStatCard(
@@ -1296,7 +1296,7 @@ class _WritingStatsSection extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ));
   }
 }
 
