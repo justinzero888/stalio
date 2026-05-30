@@ -182,10 +182,20 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _navIndex,
         onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
-        items: const [
+        items: [
           BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'My Day'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Tallies'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle, color: Colors.amber), label: ''),
+          BottomNavigationBarItem(
+            icon: Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A2533),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.add, color: Color(0xFFFFD700), size: 28),
+            ),
+            label: '',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.note_alt_outlined), label: 'Notes'),
           BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
         ],
