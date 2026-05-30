@@ -75,7 +75,7 @@ class _HabitsTab extends StatelessWidget {
     int best = 0;
     for (final r in active) { if (r.streak > best) best = r.streak; }
     return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
-      _SectionCard(title: isZh?'Habit Stats':'Habit Stats', child: SizedBox(height: 100, child: Row(children: [
+      _SectionCard(title: isZh?'Habit Stats':'Habit Stats', child: SizedBox(height: 110, child: Row(children: [
         Expanded(child: _MiniStatCard(icon: Icons.checklist, value: '${p.routines.length}', label: isZh?'Total':'Total')),
         const SizedBox(width: 8),
         Expanded(child: _MiniStatCard(icon: Icons.local_fire_department, value: '$best${isZh?"d":"d"}', label: isZh?'Best Streak':'Best Streak')),
@@ -1266,7 +1266,7 @@ class _WritingStatsSection extends StatelessWidget {
     final activeDay = summary.mostActiveDayOfWeek;
     final activeHour = summary.mostActiveHour;
 
-    return SizedBox(height: 100, child: Row(
+    return SizedBox(height: 110, child: Row(
       children: [
         Expanded(
           child: _MiniStatCard(
