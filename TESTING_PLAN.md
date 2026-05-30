@@ -1,122 +1,144 @@
 # Micro Habits — Testing Plan
 
-## 1. Unit Regression Tests
+> Last updated: May 29, 2026
 
-### 1.1 Models
-| ID | Test | Expected |
-|----|------|----------|
-| M1 | Entry.toJson/fromJson round-trip | Entry serializes and deserializes correctly with all fields |
-| M2 | Routine.toJson/fromJson with completions | Routine with completionLog survives round-trip |
-| M3 | Routine.streak calculation | Correct streak with gap grace period |
-| M4 | Routine.isCompletedOn(date) | Correctly identifies completion for specific date |
-| M5 | Routine.frequencyLabel | Correct text for daily/weekly/scheduled/adhoc |
-| M6 | Tag.toJson/fromJson round-trip | Tag serializes correctly |
-| M7 | ListItem.toJson/fromJson | List items serialize correctly |
-| M8 | Routine copyWith preserves fields | Specified fields change, others unchanged |
+## Build Verification (pre-UAT)
 
-### 1.2 Database
-| ID | Test | Expected |
-|----|------|----------|
-| D1 | DatabaseService._onCreate creates all tables | entries, tags, entry_tags, routines, completions exist |
-| D2 | DatabaseService._onCreate creates indexes | idx_entries_created_at, idx_entry_tags_tag_id, idx_completions_routine_id exist |
-| D3 | StorageService.init() seeds default tags | 6 default tags created on empty DB |
-| D4 | StorageService.init() seeds default routines | 7 default routines created on empty DB |
-| D5 | addEntry/updateEntry/deleteEntry CRUD | Entry lifecycle works correctly |
-| D6 | addRoutine/updateRoutine/deleteRoutine CRUD | Routine with completions persists correctly |
-| D7 | addTag/updateTag/deleteTag CRUD | Tag lifecycle works correctly |
-| D8 | toggleListItem toggles isDone | List item state flips correctly |
+| # | Check | Command |
+|---|-------|---------|
+| B1 | Static analysis | `flutter analyze` → 0 errors in lib |
+| B2 | Unit test compile | `flutter test` (test suite needs rebuild) |
+| B3 | iPhone 17 Pro sim | `flutter run -d <iPhone ID>` |
+| B4 | iPad Air 11" M4 sim | `flutter run -d <iPad ID>` |
+| B5 | Android API 36 emu | `flutter run -d <Android ID>` |
 
-### 1.3 Providers
-| ID | Test | Expected |
-|----|------|----------|
-| P1 | EntryProvider.loadEntries populates list | Entries loaded from storage |
-| P2 | EntryProvider.addEntry inserts at top | New entry appears at index 0 |
-| P3 | EntryProvider search filters correctly | Content search returns matching entries |
-| P4 | EntryProvider filterTag filters correctly | Tag filter returns only tagged entries |
-| P5 | EntryProvider getEntriesForDate returns correct entries | Date filtering works |
-| P6 | RoutineProvider.loadRoutines populates list | Routines loaded from storage |
-| P7 | RoutineProvider.completeRoutine adds completion | Completion added to log |
-| P8 | RoutineProvider.unmarkRoutine removes completion | Completion removed from log |
-| P9 | RoutineProvider.toggleComplete toggles state | Alternating calls add/remove completion |
-| P10 | RoutineProvider.getRoutinesForDate filters by schedule | Daily/weekly/scheduled/adhoc correct |
-| P11 | RoutineProvider.isMissedOn detects missed day | Past uncompleted scheduled = missed |
-| P12 | SummaryProvider.totalEntries counts correctly | Entry count matches |
-| P13 | SummaryProvider.currentStreak calculates correctly | Consecutive day streak correct |
-| P14 | SummaryProvider.activeHabits counts active only | Inactive routines excluded |
+---
 
-### 1.4 Services
-| ID | Test | Expected |
-|----|------|----------|
-| S1 | VoiceNotificationService.init initializes TTS | No exception thrown |
-| S2 | VoiceNotificationService.speak calls TTS | Text spoken in correct language |
-| S3 | NotificationService.init initializes plugin | Plugin and timezone set up |
-| S4 | NotificationService.scheduleRoutine schedules | Notification scheduled for reminder time |
-| S5 | NotificationService.rescheduleAll handles empty list | No exception thrown |
-| S6 | StorageService.exportData returns valid JSON | All data serialized correctly |
+## UAT Checklist — Per Device
 
-## 2. Integration Tests
+### Navigation
+| # | Test | Expected |
+|---|------|----------|
+| N1 | Bottom nav shows 4 tabs | My Day, Moments, Habits, Tallies |
+| N2 | Tab switching works | Each tab loads without crash |
+| N3 | Back-navigation works | Android back / iOS swipe returns to previous |
 
-| ID | Test | Steps | Expected |
-|----|------|-------|----------|
-| I1 | Full note lifecycle | 1. Add note with tags 2. Search for note 3. Edit note 4. Delete note | Note appears, is editable, searchable, deletable |
-| I2 | Full habit lifecycle | 1. Add habit 2. Complete today 3. Check streak 4. Unmark 5. Delete | Streak increments, completion toggles, habit removed |
-| I3 | Voice notification scheduling | 1. Add habit with reminder 2. Check notification scheduled | Background notification appears at scheduled time |
-| I4 | Backup/restore cycle | 1. Create data 2. Export ZIP 3. Clear data 4. Import ZIP | Data restored exactly |
-| I5 | Multi-tab navigation | 1. Navigate My Day → Moments → Habits → Insights | Each tab loads correctly, state preserved |
+---
 
-## 3. UAT Test Cases
+### My Day
+| # | Test | Expected |
+|---|------|----------|
+| D1 | AppBar shows "Stalio: Do. Tally. Grow." | Title visible on today |
+| D2 | Past date shows date suffix | e.g. "Stalio: Do. Tally. Grow. - May 28" |
+| D3 | Welcome banner shows motto | "A thousand miles begins with a single step" |
+| D4 | Calendar renders | Month grid with entry dots and habit badges |
+| D5 | Tap past date | Entries and habits for that date shown |
+| D6 | Tap + FAB | Opens Add Memory with note field, tags, mood, media |
+| D7 | Add note with emotion | Save → emotion appears in emoji jar |
+| D8 | Emoji jar renders | Glass jar with emoji grid, +N overflow badge |
+| D9 | Mood jar title shows "My Mood Jar" | No duplicate date appended |
+| D10 | Habit check-in section visible | Shows pending + completed habits |
+| D11 | Tap habit checkbox | Toggles completion, updates jar |
+| D12 | Tap edit icon (pencil) next to "Habit Check-in" | Opens Settings > Habit Build tab |
+| D13 | Tap on entry card | Opens entry detail view |
 
-### 3.1 My Day (Calendar)
-| ID | Case | Steps | Pass Criteria |
-|----|------|-------|---------------|
-| U1 | View today's entries | Open My Day tab | Today's entries visible |
-| U2 | View past date | Tap past date in calendar | Past day's entries shown |
-| U3 | Add entry from FAB | Tap +, write note, save | Note appears in list |
-| U4 | Edit entry | Tap entry, edit, save | Changes persist |
-| U5 | Delete entry | Swipe/delete entry | Entry removed |
-| U6 | Emotion picker | Add entry with emotion | Emotion saved and visible |
+---
 
-### 3.2 Moments (Notes)
-| ID | Case | Steps | Pass Criteria |
-|----|------|-------|---------------|
-| U7 | Search notes | Type in search bar | Filtered results shown |
-| U8 | Filter by tag | Tap filter, select tag | Tag-filtered results shown |
-| U9 | Clear search | Clear search text | All notes visible again |
-| U10 | Note detail view | Tap note card | Full note content shown |
+### Moments
+| # | Test | Expected |
+|---|------|----------|
+| M1 | Search bar filters notes | Typing filters list in real-time |
+| M2 | Filter by tag | Tag filter chip shows filtered results |
+| M3 | Clear search/filter | All notes shown |
+| M4 | Tap note card | Opens edit screen |
+| M5 | Edit note content/tags/mood | Changes save on back |
+| M6 | Delete note | Note removed from list |
 
-### 3.3 Habits
-| ID | Case | Steps | Pass Criteria |
-|----|------|-------|---------------|
-| U11 | Add habit | Tap +, fill form, save | Habit appears in list |
-| U12 | Complete habit | Check checkbox | Completion recorded, streak updated |
-| U13 | Un-complete habit | Uncheck checkbox | Completion removed |
-| U14 | Edit habit | Tap habit, edit, save | Changes persist |
-| U15 | Delete habit | Open edit, tap delete | Habit removed |
-| U16 | Voice reminder toggle | Enable voice in settings | Voice speaks at scheduled time |
-| U17 | Weekly habit | Create habit with specific days | Only shows on selected days |
-| U18 | Streak display | Complete habit 3 days | Streak shows "3 days" |
+---
 
-### 3.4 Insights
-| ID | Case | Steps | Pass Criteria |
-|----|------|-------|---------------|
-| U19 | Note count display | View Insights tab | Total note count shown |
-| U20 | Active habit count | View Insights tab | Active habit count shown |
+### Habits
+| # | Test | Expected |
+|---|------|----------|
+| H1 | Summary cards at top | Total, Best Streak, Active with icons and counts |
+| H2 | Today section shows date | Date header with today's day name |
+| H3 | Pending habits show checkboxes | Tap to complete |
+| H4 | Completed habits in green row | Check circle icon with emoji |
+| H5 | Progress bar shows done/total | Updates on toggle |
+| H6 | All done celebration message | Shows when all habits completed |
+| H7 | Streak Matrix renders | Card with "Streak Matrix" header, habit rows with icons, day columns |
+| H8 | Matrix starting date is correct | Starts from earliest completion, no empty future cells |
+| H9 | Month labels on matrix | Month names at top of columns |
+| H10 | Day labels at bottom | M/W/F labels |
+| H11 | Legend shows Missed/Done colors | Grey/green dots with labels |
 
-### 3.5 Cross-Device
-| ID | Case | Steps | Pass Criteria |
-|----|------|-------|---------------|
-| U21 | All 4 tabs render on iPhone | Launch on iPhone 17 Pro | No crash, tabs navigable |
-| U22 | All 4 tabs render on iPad | Launch on iPad Air 11" | No crash, tabs navigable |
-| U23 | All 4 tabs render on Android | Launch on Pixel emulator | No crash, tabs navigable |
+---
 
-## UAT Checklist (per device)
+### Tallies (Insights)
+| # | Test | Expected |
+|---|------|----------|
+| T1 | AppBar shows "Tallies" / "统计" | Title correct |
+| T2 | Hero stats row | 4 stat cards with real data |
+| T3 | Calendar heatmap | GitHub-style grid of colored cells |
+| T4 | Writing stats | avg words, most active day, peak hour |
+| T5 | Mood pie chart | Colored segments by emotion group |
+| T6 | Scope picker | Day/Week/Month toggle works |
+| T7 | Note count bar chart | Updates with scope |
+| T8 | Habit completion bar chart | Per-habit green bars |
+| T9 | Emotion trend line chart | Mood score over time |
+| T10 | Top tags bar chart | Colored by tag |
+| T11 | Checklist insights | 4 stat rows |
+| T12 | Tag-mood correlation | 5 progress bars with mood scores |
+| T13 | Yearly emoji jars | Horizontal scrollable jars per year |
+| T14 | No AI/paywall popups | No "Pro required" messages |
 
-- [ ] App launches without crash
-- [ ] Bottom nav shows 4 tabs (My Day, Moments, Habits, Insights)
-- [ ] My Day: Calendar renders, FAB adds entry
-- [ ] Moments: Note list renders, search works
-- [ ] Habits: Habit list renders, checkbox toggles work
-- [ ] Insights: Basic stats render
-- [ ] No AI robot overlay visible
-- [ ] No purchase/paywall prompts
-- [ ] No card sharing UI
+---
+
+### Settings — General Tab
+| # | Test | Expected |
+|---|------|----------|
+| G1 | Voice toggle | Switch enables/disables voice reminders |
+| G2 | Test voice button | Plays "Hello, this is a voice reminder test" |
+| G3 | Language switcher | EN ↔ ZH toggles correctly |
+| G4 | Backup (ZIP) placeholder | Shows "Backup coming soon" |
+| G5 | Restore placeholder | Shows "Restore coming soon" |
+| G6 | Version info | Shows "Micro Habits Version 1.0.0" |
+| G7 | Terms & Privacy | Opens bottom sheet with Privacy/Terms tabs, scrollable legal text |
+
+---
+
+### Settings — Tags Tab
+| # | Test | Expected |
+|---|------|----------|
+| TG1 | Default tags visible | 6 custom tags + 1 system tag (Private) |
+| TG2 | Add new tag | Dialog with name, EN name, color picker works |
+| TG3 | Edit existing tag | Changes save and reflect immediately |
+| TG4 | Delete tag | Tag removed from list |
+| TG5 | System tag locked | Private tag shows lock icon, cannot delete |
+| TG6 | No AI/Welcome tags | tag_synthesis and tag_welcome not present |
+
+---
+
+### Settings — Habit Build Tab
+| # | Test | Expected |
+|---|------|----------|
+| HB1 | Active habits listed | With category icons, frequency labels, descriptions |
+| HB2 | Paused habits listed | Faded, best streak shown |
+| HB3 | Active/paused toggle switch | Moves habit between sections |
+| HB4 | Three-dot menu | Opens edit dialog (name, frequency, days, reminder, voice) |
+| HB5 | "+ Add Habit" button | Opens Add Habit dialog with all fields |
+| HB6 | New habit appears in Habits page | Immediately visible after add |
+
+---
+
+### Add Memory / Edit Memory
+| # | Test | Expected |
+|---|------|----------|
+| AM1 | Note/List format toggle | SegmentedButton switches format |
+| AM2 | Text field works | Typing content |
+| AM3 | Tags section below text | FilterChips with colors, tap to select |
+| AM4 | Edit tag icon (pencil) | Opens Settings > Tags tab |
+| AM5 | Mood picker below tags | 10 emoji buttons, tap to select, label shown |
+| AM6 | Media section (if media added) | Thumbnails with remove button |
+| AM7 | Save button works | Entry appears in My Day and Moments |
+| AM8 | No voice transcribe button | Mic icon removed |
+| AM9 | No photo/camera buttons | Photo and Camera CTAs removed |
