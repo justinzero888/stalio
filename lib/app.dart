@@ -14,6 +14,7 @@ import 'providers/summary_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/moment/moment_screen.dart';
 import 'screens/cherished/cherished_memory_screen.dart';
+import 'screens/settings/settings_screen.dart';
 import 'screens/add_entry_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
@@ -113,11 +114,10 @@ class _MainScreenState extends State<MainScreen> {
   int _navIndex = 0;
   late final List<Widget> _screens;
 
-  int get _screenIndex {
-    if (_navIndex == 3) return 2;
-    if (_navIndex > 0) return _navIndex - 1;
-    return 0;
-  }
+  // Nav: 0=MyDay, 1=Tallies, 2=+, 3=Notes, 4=Settings
+  // Screen: 0=Home, 1=Tallies, 2=Notes, 3=Settings
+  static const _navToScreen = <int?>[0, 1, null, 2, 3];
+  int? _lastScreenIndex = 0;
 
   @override
   void initState() {
@@ -126,6 +126,7 @@ class _MainScreenState extends State<MainScreen> {
       const HomeScreen(),
       const InsightsScreen(),
       const MomentScreen(),
+      const SettingsScreen(),
     ];
   }
 
@@ -134,7 +135,10 @@ class _MainScreenState extends State<MainScreen> {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEntryScreen()));
       return;
     }
-    setState(() => _navIndex = index);
+    setState(() {
+      _navIndex = index;
+      _lastScreenIndex = _navToScreen[index];
+    });
   }
 
   Future<void> _seedWelcomeEntry() async {
@@ -171,7 +175,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _screenIndex,
+        index: _lastScreenIndex ?? 0,
         children: _screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -181,16 +185,11 @@ class _MainScreenState extends State<MainScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'My Day'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Tallies'),
-          BottomNavigationBarItem(icon: SizedBox.shrink(), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle, color: Colors.amber), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.note_alt_outlined), label: 'Notes'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'main_add_entry_fab',
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEntryScreen())),
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
