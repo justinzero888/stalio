@@ -9,7 +9,10 @@ import '../../providers/tag_provider.dart';
 import '../../providers/jar_provider.dart';
 import '../../widgets/emoji_jar.dart';
 import '../../providers/entry_provider.dart';
+import '../../providers/routine_provider.dart';
 import '../../models/entry.dart';
+import '../../models/routine.dart';
+import '../../models/tag.dart';
 
 class InsightsScreen extends StatelessWidget {
   const InsightsScreen({super.key});
@@ -27,90 +30,133 @@ class InsightsScreen extends StatelessWidget {
   }
 }
 
-class _InsightsContent extends StatelessWidget {
+class _InsightsContent extends StatefulWidget {
   const _InsightsContent();
-
   @override
-  Widget build(BuildContext context) {
-    final summary = context.watch<SummaryProvider>();
-    final jarProvider = context.watch<JarProvider>();
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
+  State<_InsightsContent> createState() => _InsightsContentState();
+}
+
+class _InsightsContentState extends State<_InsightsContent> {
+  @override
+  Widget build(BuildContext ctx) {
+    final summary = ctx.watch<SummaryProvider>();
+    final jarProvider = ctx.watch<JarProvider>();
+    final isZh = ctx.watch<LocaleProvider>().locale.languageCode == 'zh';
     final years = jarProvider.yearsWithData;
 
     if (summary.totalEntries == 0) {
-      if (summary.isLoading) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.insights,
-                  size: 48, color: Theme.of(context).colorScheme.outline),
-              const SizedBox(height: 16),
-              Text(
-                isZh ? '开始记录即可查看洞察' : 'Start journaling to see insights',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      );
+      if (summary.isLoading) return const Center(child: CircularProgressIndicator());
+      return Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.insights, size: 48, color: ctx.theme().colorScheme.outline),
+        const SizedBox(height: 16),
+        Text(isZh ? 'Start journaling to see insights' : 'Start journaling to see insights', style: ctx.theme().textTheme.bodyLarge?.copyWith(color: ctx.theme().colorScheme.outline)),
+      ])));
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
-        _HeroStatsRow(summary: summary, isZh: isZh),
-        const SizedBox(height: 24),
-        _SectionCard(
-          title: isZh ? '📅 写作足迹' : '📅 Writing Activity',
-          trailing: summary.totalEntries > 0
-              ? Text(
-                  '${summary.totalEntries} ${isZh ? "条" : "entries"}',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                )
-              : null,
-          child: _CalendarHeatmap(entriesPerDay: summary.entriesPerDay),
-        ),
-        const SizedBox(height: 24),
-        _SectionCard(
-          title: isZh ? '🔥 写作统计' : '🔥 Writing Stats',
-          child: _WritingStatsSection(summary: summary, isZh: isZh),
-        ),
-        const SizedBox(height: 24),
-        _SectionCard(
-          title: isZh ? '🎭 情绪分布' : '🎭 Mood Distribution',
-          child: _MoodDistributionChart(moodDistribution: summary.moodDistribution),
-        ),
-        const SizedBox(height: 24),
-        _SectionCard(
-          title: isZh ? '📊 趋势分析' : '📊 Trends',
-          trailing: _ScopePicker(
-            scope: summary.scope,
-            onChanged: summary.setScope,
-          ),
-          child: const _TrendCharts(),
-        ),
-        const SizedBox(height: 24),
-        _SectionCard(
-          title: isZh ? '✅ 清单洞察' : '✅ Checklist Insights',
-          child: _ChecklistInsightsSection(summary: summary, isZh: isZh),
-        ),
-        const SizedBox(height: 24),
-        _SectionCard(
-          title: isZh ? '🔬 标签与情绪' : '🔬 Tag Impact on Mood',
-          child: _TagMoodSection(summary: summary, isZh: isZh),
-        ),
-        const SizedBox(height: 24),
-        _EmojiJarSection(years: years, isZh: isZh),
-      ],
-    );
+    return DefaultTabController(length: 3, child: Column(children: [
+      _HeroStatsRow(summary: summary, isZh: isZh),
+      TabBar(tabs: [Tab(text: isZh?'Habits':'Habits'),Tab(text: isZh?'Notes':'Notes'),Tab(text: isZh?'Moods':'Moods')]),
+      Expanded(child: TabBarView(children: [
+        _HabitsTab(summary: summary, isZh: isZh),
+        _NotesTab(summary: summary, isZh: isZh),
+        _MoodsTab(summary: summary, years: years, isZh: isZh),
+      ])),
+    ]));
   }
+}
+
+class _HabitsTab extends StatelessWidget {
+  final SummaryProvider summary; final bool isZh;
+  const _HabitsTab({required this.summary, required this.isZh});
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<RoutineProvider>();
+    final active = p.routines.where((r) => r.isActive).toList();
+    int best = 0;
+    for (final r in active) { if (r.streak > best) best = r.streak; }
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
+      _SectionCard(title: isZh?'Habit Stats':'Habit Stats', child: SizedBox(height: 100, child: Row(children: [
+        Expanded(child: _MiniStatCard(icon: Icons.checklist, value: '${p.routines.length}', label: isZh?'Total':'Total')),
+        const SizedBox(width: 8),
+        Expanded(child: _MiniStatCard(icon: Icons.local_fire_department, value: '$best${isZh?"d":"d"}', label: isZh?'Best Streak':'Best Streak')),
+        const SizedBox(width: 8),
+        Expanded(child: _MiniStatCard(icon: Icons.play_circle, value: '${active.length}', label: isZh?'Active':'Active')),
+      ]))),
+      if (active.isNotEmpty) ...[const SizedBox(height: 24), _StreakMatrixSection(routines: active)],
+      const SizedBox(height: 24),
+      _SectionCard(title: isZh?'Habit Completion':'Habit Completion', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _RoutineCompletionChart(provider: summary)),
+    ]);
+  }
+}
+
+class _NotesTab extends StatelessWidget {
+  final SummaryProvider summary; final bool isZh;
+  const _NotesTab({required this.summary, required this.isZh});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
+      _SectionCard(title: isZh?'Writing Stats':'Writing Stats', child: _WritingStatsSection(summary: summary, isZh: isZh)),
+      const SizedBox(height: 24),
+      _SectionCard(title: isZh?'Writing Activity':'Writing Activity', trailing: summary.totalEntries>0?Text('${summary.totalEntries} ${isZh?"entries":"entries"}',style:TextStyle(color:Colors.grey[400],fontSize:12)):null, child: _CalendarHeatmap(entriesPerDay: summary.entriesPerDay)),
+      const SizedBox(height: 24),
+      _SectionCard(title: isZh?'Notes Trend':'Notes Trend', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _NoteCountChart(provider: summary)),
+      const SizedBox(height: 24),
+      _SectionCard(title: isZh?'Checklist Insights':'Checklist Insights', child: _ChecklistInsightsSection(summary: summary, isZh: isZh)),
+    ]);
+  }
+}
+
+class _MoodsTab extends StatelessWidget {
+  final SummaryProvider summary; final List<int> years; final bool isZh;
+  const _MoodsTab({required this.summary, required this.years, required this.isZh});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
+      _EmojiJarSection(years: years, isZh: isZh),
+      const SizedBox(height: 24),
+      _SectionCard(title: isZh?'Mood Distribution':'Mood Distribution', child: _MoodDistributionChart(moodDistribution: summary.moodDistribution)),
+      const SizedBox(height: 24),
+      _SectionCard(title: isZh?'Mood Trend':'Mood Trend', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _EmotionTrendChart(provider: summary)),
+      const SizedBox(height: 24),
+      _SectionCard(title: isZh?'Tag Impact on Mood':'Tag Impact on Mood', child: _TagMoodSection(summary: summary, isZh: isZh)),
+    ]);
+  }
+}
+
+class _StreakMatrixSection extends StatelessWidget {
+  final List<Routine> routines;
+  const _StreakMatrixSection({required this.routines});
+  @override
+  Widget build(BuildContext context) {
+    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
+    final now = DateTime.now(), today = DateTime(now.year, now.month, now.day);
+    DateTime earliest = today;
+    for (final r in routines) {
+      for (final c in r.completionLog) { final d = DateTime(c.completedAt.year, c.completedAt.month, c.completedAt.day); if (d.isBefore(earliest)) earliest = d; }
+      final rd = DateTime(r.createdAt.year, r.createdAt.month, r.createdAt.day); if (rd.isBefore(earliest)) earliest = rd;
+    }
+    while (earliest.weekday != DateTime.sunday) earliest = earliest.subtract(const Duration(days: 1));
+    final weeks = <List<DateTime>>[]; var c = earliest;
+    while (c.isBefore(today) || c == today) { weeks.add(List.generate(7, (d)=>DateTime(c.year, c.month, c.day).add(Duration(days:d)))); c = c.add(const Duration(days:7)); }
+    const s = 12.0;
+    return _SectionCard(title: isZh?'Streak Matrix':'Streak Matrix', child: Padding(padding: const EdgeInsets.all(12), child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      ...routines.map((r) => Padding(padding: const EdgeInsets.only(bottom:6), child: Row(children: [
+        SizedBox(width:100, child: Row(children: [Text(r.effectiveIcon, style: const TextStyle(fontSize:12)), const SizedBox(width:4), Expanded(child: Text(r.displayName(isZh), style: const TextStyle(fontSize:11, fontWeight:FontWeight.w500), overflow:TextOverflow.ellipsis))])),
+        ...weeks.map((w)=>Row(children: w.map((d){final done=r.isCompletedOn(d);return Container(width:s,height:s,margin:const EdgeInsets.all(1),decoration:BoxDecoration(color:d.isAfter(today)?Colors.transparent:(done?Theme.of(context).colorScheme.primary:Colors.grey[200]),borderRadius:BorderRadius.circular(2)));}).toList())),
+      ]))),
+      Row(children: [
+        Container(width:10,height:10,margin:const EdgeInsets.all(1),decoration:BoxDecoration(color:Colors.grey[200]!,borderRadius:BorderRadius.circular(1))),
+        const SizedBox(width:4),Text(isZh?'Missed':'Missed',style:const TextStyle(fontSize:10,color:Colors.grey)),
+        const SizedBox(width:12),
+        Container(width:10,height:10,margin:const EdgeInsets.all(1),decoration:BoxDecoration(color:Theme.of(context).colorScheme.primary,borderRadius:BorderRadius.circular(1))),
+        const SizedBox(width:4),Text(isZh?'Done':'Done',style:const TextStyle(fontSize:10,color:Colors.grey)),
+      ]),
+    ]))));
+  }
+}
+
+extension _ on BuildContext {
+  ThemeData theme() => Theme.of(this);
 }
 
 class _HeroStatsRow extends StatelessWidget {
