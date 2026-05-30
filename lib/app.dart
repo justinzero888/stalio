@@ -13,13 +13,10 @@ import 'providers/jar_provider.dart';
 import 'providers/summary_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/moment/moment_screen.dart';
-import 'screens/routine/routine_screen.dart';
 import 'screens/cherished/cherished_memory_screen.dart';
-import 'screens/settings/settings_screen.dart';
 import 'screens/add_entry_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
-
 import 'core/services/export_service.dart';
 
 class BlinkingApp extends StatelessWidget {
@@ -113,21 +110,31 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-  final _routineKey = GlobalKey<RoutineScreenState>();
-
+  int _navIndex = 0;
   late final List<Widget> _screens;
+
+  int get _screenIndex {
+    if (_navIndex == 3) return 2;
+    if (_navIndex > 0) return _navIndex - 1;
+    return 0;
+  }
 
   @override
   void initState() {
     super.initState();
     _screens = [
       const HomeScreen(),
-      const MomentScreen(),
-      RoutineScreen(key: _routineKey),
       const InsightsScreen(),
-      const SettingsScreen(),
+      const MomentScreen(),
     ];
+  }
+
+  void _onTabTapped(int index) {
+    if (index == 2) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEntryScreen()));
+      return;
+    }
+    setState(() => _navIndex = index);
   }
 
   Future<void> _seedWelcomeEntry() async {
@@ -160,80 +167,30 @@ class _MainScreenState extends State<MainScreen> {
     await prefs.setBool('welcome_entry_seeded', true);
   }
 
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: _screenIndex,
         children: _screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: _navIndex,
         onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
-        items: [
-          BottomNavigationBarItem(
-            icon: Semantics(identifier: 'nav_my_day', child: const Icon(Icons.calendar_today)),
-            label: l10n.calendar,
-          ),
-          BottomNavigationBarItem(
-            icon: Semantics(identifier: 'nav_moments', child: const Icon(Icons.access_time)),
-            label: l10n.moment,
-          ),
-          BottomNavigationBarItem(
-            icon: Semantics(identifier: 'nav_routine', child: const Icon(Icons.check_circle_outline)),
-            label: 'Habits',
-          ),
-          BottomNavigationBarItem(
-            icon: Semantics(identifier: 'nav_insights', child: const Icon(Icons.insights)),
-            label: 'Tallies',
-          ),
-          BottomNavigationBarItem(
-            icon: Semantics(identifier: 'nav_settings', child: const Icon(Icons.settings)),
-            label: l10n.settings,
-          ),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'My Day'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Tallies'),
+          BottomNavigationBarItem(icon: SizedBox.shrink(), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.note_alt_outlined), label: 'Notes'),
         ],
       ),
-      floatingActionButton: _buildFab(),
-    );
-  }
-
-  Widget? _buildFab() {
-    if (_currentIndex >= 3) return null;
-
-    if (_currentIndex == 2) {
-      return FloatingActionButton(
-        heroTag: 'main_add_routine_fab',
-        onPressed: () {
-          _routineKey.currentState?.showAddRoutineDialog(context);
-        },
-        child: Semantics(
-          identifier: 'main_add_routine_fab',
-          child: const Icon(Icons.playlist_add),
-        ),
-      );
-    }
-
-    return FloatingActionButton(
-      heroTag: 'main_add_entry_fab',
-      tooltip: 'Add memory',
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddEntryScreen()),
-        );
-      },
-      child: Semantics(
-        identifier: 'btn_fab_add_entry',
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'main_add_entry_fab',
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEntryScreen())),
         child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
