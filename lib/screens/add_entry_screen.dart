@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:uuid/uuid.dart';
 import 'dart:io';
 import '../providers/entry_provider.dart';
@@ -11,6 +10,7 @@ import '../models/media.dart';
 import '../core/services/file_service.dart';
 import '../core/config/emotions.dart';
 import '../l10n/app_localizations.dart';
+import '../screens/settings/settings_screen.dart';
 import 'package:open_filex/open_filex.dart';
 
 class AddEntryScreen extends StatefulWidget {
@@ -34,10 +34,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   String? _selectedEmotion;
   EntryFormat _selectedFormat = EntryFormat.note;
   final List<ListItem> _listItems = [];
-
-  final stt.SpeechToText _speech = stt.SpeechToText();
-  bool _isListening = false;
-  String _transcribedText = '';
 
   @override
   void initState() {
@@ -104,77 +100,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     _itemController.dispose();
     _itemFocusNode.dispose();
     super.dispose();
-  }
-
-  Future<void> _startVoiceTranscribe() async {
-    if (_isListening) {
-      _stopVoiceTranscribe();
-      return;
-    }
-
-    try {
-      bool available = _speech.isAvailable;
-      if (!available) {
-        available = await _speech.initialize(
-          onStatus: (status) {
-            if (status == stt.SpeechToText.doneStatus ||
-                status == stt.SpeechToText.notListeningStatus) {
-              if (mounted) setState(() => _isListening = false);
-            }
-          },
-          onError: (error) {
-            if (mounted) setState(() => _isListening = false);
-          },
-        );
-      }
-      if (!available) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Speech recognition is not available on this device')),
-          );
-        }
-        return;
-      }
-      if (mounted) {
-        setState(() {
-          _isListening = true;
-          _transcribedText = '';
-        });
-      }
-      _speech.listen(
-        onResult: (result) {
-          if (mounted) {
-            setState(() {
-              _transcribedText = result.recognizedWords;
-            });
-          }
-        },
-        listenFor: const Duration(seconds: 60),
-        pauseFor: const Duration(seconds: 3),
-        cancelOnError: false,
-        partialResults: true,
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isListening = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Speech recognition is not available on this device')),
-        );
-      }
-    }
-  }
-
-  void _stopVoiceTranscribe() {
-    _speech.stop();
-    setState(() {
-      _isListening = false;
-      if (_transcribedText.isNotEmpty) {
-        final current = _textController.text;
-        _textController.text = current.isEmpty
-            ? _transcribedText
-            : '$current $_transcribedText';
-      }
-    });
   }
 
   void _removeMedia(int index) {
@@ -455,6 +380,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             if (isList) ..._buildListMode(context, isZh, l) else ..._buildNoteMode(context, isZh),
             if (!_isPastEntry) ...[
               const SizedBox(height: 16),
+              _buildTagSection(context, isZh),
+              const SizedBox(height: 16),
               ..._buildSharedSections(context, isZh, l),
             ],
           ],
@@ -663,57 +590,6 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   List<Widget> _buildSharedSections(BuildContext context, bool isZh, AppLocalizations l) {
     return [
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _MediaButton(
-            icon: _isListening ? Icons.mic : Icons.mic_none,
-            label: _isListening
-                ? (isZh ? '录音中...' : 'Listening...')
-                : (isZh ? '语音输入' : 'Voice'),
-            color: _isListening ? Colors.red : null,
-            onPressed: _isListening ? _stopVoiceTranscribe : _startVoiceTranscribe,
-          ),
-        ],
-      ),
-      if (_isListening) ...[
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.red.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.red.shade200),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.mic, color: Colors.red),
-                  const SizedBox(width: 8),
-                  Text(
-                    isZh ? '正在聆听... 点击停止' : 'Listening... tap to stop',
-                    style: TextStyle(color: Colors.red.shade700),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _stopVoiceTranscribe,
-                    child: Text(isZh ? '完成' : 'Done'),
-                  ),
-                ],
-              ),
-              if (_transcribedText.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _transcribedText,
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
       const SizedBox(height: 16),
       if (_mediaItems.isNotEmpty) ...[
         Text(
@@ -794,61 +670,56 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             ),
           ),
         ),
-      const SizedBox(height: 16),
-      Text(
-        isZh ? '标签' : 'Tags',
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 8),
-      Consumer<TagProvider>(
-        builder: (context, tagProvider, child) {
-          final hiddenIds = const {'tag_synthesis', 'tag_welcome'};
-          final tags = tagProvider.tags.where((t) => !hiddenIds.contains(t.id));
-          return Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: tags.map((tag) {
-              final isSelected = _selectedTagIds.contains(tag.id);
-              final colorValue = int.parse(tag.color.substring(1), radix: 16) + 0xFF000000;
-              return FilterChip(
-                label: Text(tag.displayName(isZh)),
-                selected: isSelected,
-                onSelected: (_) => _toggleTag(tag.id),
-                backgroundColor: Color(colorValue).withValues(alpha: 0.2),
-                selectedColor: Color(colorValue),
-              );
-            }).toList(),
-          );
-        },
-      ),
     ];
   }
-}
 
-class _MediaButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-  final Color? color;
-
-  const _MediaButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, color: color),
-      label: Text(label, style: color != null ? TextStyle(color: color) : null),
-      style: color != null
-          ? ElevatedButton.styleFrom(
-              foregroundColor: color,
-            )
-          : null,
+  Widget _buildTagSection(BuildContext context, bool isZh) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              isZh ? '标签' : 'Tags',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              tooltip: isZh ? '管理标签' : 'Manage Tags',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SettingsScreen(initialTab: 1),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Consumer<TagProvider>(
+          builder: (context, tagProvider, child) {
+            final tags = tagProvider.tags.where((t) => t.id != '');
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: tags.map((tag) {
+                final isSelected = _selectedTagIds.contains(tag.id);
+                final colorValue = int.parse(tag.color.substring(1), radix: 16) + 0xFF000000;
+                return FilterChip(
+                  label: Text(tag.displayName(isZh)),
+                  selected: isSelected,
+                  onSelected: (_) => _toggleTag(tag.id),
+                  backgroundColor: Color(colorValue).withValues(alpha: 0.2),
+                  selectedColor: Color(colorValue),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
     );
   }
 }

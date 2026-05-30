@@ -141,21 +141,19 @@ class _MainScreenState extends State<MainScreen> {
     await entryProvider.addEntry(
       type: EntryType.freeform,
       content: isZh
-          ? '欢迎使用 Blinking 记忆闪烁 ✨\n\n'
+          ? '欢迎使用 Micro Habits ✨\n\n'
             '这是一个帮助你记录日常、追踪习惯、反思成长的空间。\n\n'
             '📝 记录：点击 + 按钮写日记，可以添加情绪和标签。\n'
-            '📋 习惯：在"执行"页面管理日常习惯，打卡追踪。\n'
-            '💡 洞察：查看你的情绪变化、习惯完成率和年度回顾。\n'
-            '🤖 AI 助手：点击浮动机器人，与 AI 对话并保存反思。\n\n'
-            '开始你的记忆之旅吧！'
-          : 'Welcome to Blinking Notes ✨\n\n'
+            '📋 习惯：在 Habits 页面管理日常习惯，打卡追踪。\n'
+            '💡 洞察：查看你的情绪变化、习惯完成率和图表分析。\n\n'
+            '开始你的习惯之旅吧！'
+          : 'Welcome to Micro Habits ✨\n\n'
             'A space to record daily moments, track habits, and reflect on your growth.\n\n'
             '📝 Jot: Tap the + button to write entries with emotions and tags.\n'
-            '📋 Habits: Manage daily habits on the Do tab and track your streaks.\n'
-            '💡 Insights: Explore mood trends, habit completion, and annual reflections.\n'
-            '🤖 AI Companion: Tap the floating robot to chat and save reflections.\n\n'
-            'Start your memory journey!',
-      tagIds: ['tag_welcome'],
+            '📋 Habits: Manage daily habits and track your streaks.\n'
+            '📊 Tallies: Explore mood trends, habit completion, and charts.\n\n'
+            'Start your habit journey!',
+      tagIds: ['tag_daily'],
       emotion: '😊',
     );
 
@@ -195,7 +193,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           BottomNavigationBarItem(
             icon: Semantics(identifier: 'nav_insights', child: const Icon(Icons.insights)),
-            label: l10n.insights,
+            label: 'Tallies',
           ),
           BottomNavigationBarItem(
             icon: Semantics(identifier: 'nav_settings', child: const Icon(Icons.settings)),

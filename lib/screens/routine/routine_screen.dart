@@ -34,295 +34,129 @@ class RoutineScreen extends StatefulWidget {
   State<RoutineScreen> createState() => RoutineScreenState();
 }
 
-class RoutineScreenState extends State<RoutineScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  // Adhoc routines manually added to today's list (in-memory, not persisted)
+class RoutineScreenState extends State<RoutineScreen> {
   final Set<String> _manuallyAddedToday = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      setState(() {}); // force rebuild on tab switch for fresh data
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  static String _buildLabel(bool isZh) => isZh ? '建造' : 'Build';
-  static String _doLabel(bool isZh) => isZh ? '执行' : 'Do';
-  static String _reflectLabel(bool isZh) => isZh ? '反思' : 'Reflect';
 
   @override
   Widget build(BuildContext context) {
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
+    final provider = context.watch<RoutineProvider>();
+    final activeRoutines = provider.routines.where((r) => r.isActive).toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(isZh ? '日常 · 建造/执行/反思' : 'Routines · Build/Do/Reflect'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(child: Semantics(identifier: 'routine_tab_build', child: Text(_buildLabel(isZh)))),
-            Tab(child: Semantics(identifier: 'routine_tab_do', child: Text(_doLabel(isZh)))),
-            Tab(child: Semantics(identifier: 'routine_tab_reflect', child: Text(_reflectLabel(isZh)))),
-          ],
-        ),
+        title: Text(isZh ? '习惯' : 'Habits'),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          _BuildTab(onEdit: _showEditRoutineDialog),
-          _DoTab(
+          _SummaryCards(provider: provider),
+          const SizedBox(height: 20),
+          _TodaySection(
             manuallyAdded: _manuallyAddedToday,
             onManualAdd: (id) => setState(() => _manuallyAddedToday.add(id)),
           ),
-          const _ReflectTab(),
+          const SizedBox(height: 24),
+          if (activeRoutines.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isZh ? '连续记录' : 'Streak Matrix',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    _StreakMatrix(routines: activeRoutines),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
   void showAddRoutineDialog(BuildContext context) {
-    _RoutineDialog.show(context, existing: null);
-  }
-
-  void _showEditRoutineDialog(BuildContext context, Routine routine) {
-    _RoutineDialog.show(context, existing: routine);
+    RoutineDialog.show(context, existing: null);
   }
 }
 
-// ─────────────────────────────────────────────
-// Tab 1 — 建造 / Build
-// ─────────────────────────────────────────────
-class _BuildTab extends StatelessWidget {
-  final void Function(BuildContext, Routine) onEdit;
-  const _BuildTab({required this.onEdit});
+// ── Summary Cards ────────────────────────────────────────────────
+
+class _SummaryCards extends StatelessWidget {
+  final RoutineProvider provider;
+  const _SummaryCards({required this.provider});
 
   @override
   Widget build(BuildContext context) {
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
-    final provider = context.watch<RoutineProvider>();
-    final routines = provider.routines;
-    final active = routines.where((r) => r.isActive).toList();
-    final paused = routines.where((r) => !r.isActive).toList();
-
-    if (routines.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🌱', style: TextStyle(fontSize: 48)),
-              const SizedBox(height: 16),
-              Text(
-                isZh ? '开始建立你的日常习惯' : 'Start building your routine',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                isZh
-                    ? '小的习惯，坚持做下去，\n会带来持久的改变。'
-                    : 'Small habits, done consistently,\ncreate lasting change.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[500], fontSize: 14),
-              ),
-          ],
-        ),
-      ),
-    );
+    final activeHabits = provider.routines.where((r) => r.isActive).toList();
+    int bestStreak = 0;
+    for (final r in activeHabits) {
+      if (r.streak > bestStreak) bestStreak = r.streak;
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Row(
       children: [
-        if (active.isNotEmpty) ...[
-          Row(
-            children: [
-              Text(
-                isZh ? '活跃' : 'Active',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${active.length}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...active.map((r) => _BuildRoutineTile(
-                routine: r,
-                onEdit: () => onEdit(context, r),
-                onToggle: () => _toggleActive(context, r),
-              )),
-          const SizedBox(height: 16),
-        ],
-        if (paused.isNotEmpty) ...[
-          Row(
-            children: [
-              Text(
-                isZh ? '已暂停' : 'Paused',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${paused.length}',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...paused.map((r) => _BuildRoutineTile(
-                routine: r,
-                onEdit: () => onEdit(context, r),
-                onToggle: () => _toggleActive(context, r),
-              )),
-        ],
+        _StatCard(
+          icon: Icons.checklist,
+          value: '${provider.routines.length}',
+          label: isZh ? '总计' : 'Total',
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(width: 8),
+        _StatCard(
+          icon: Icons.local_fire_department,
+          value: '$bestStreak${isZh ? "天" : "d"}',
+          label: isZh ? '最佳连续' : 'Best Streak',
+          color: Colors.amber.shade700,
+        ),
+        const SizedBox(width: 8),
+        _StatCard(
+          icon: Icons.play_circle,
+          value: '${activeHabits.length}',
+          label: isZh ? '活跃' : 'Active',
+          color: Colors.green,
+        ),
       ],
     );
   }
-
-  void _toggleActive(BuildContext context, Routine routine) {
-    context.read<RoutineProvider>().toggleActive(routine.id);
-  }
 }
 
-class _BuildRoutineTile extends StatelessWidget {
-  final Routine routine;
-  final VoidCallback onEdit;
-  final VoidCallback onToggle;
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
 
-  const _BuildRoutineTile({
-    required this.routine,
-    required this.onEdit,
-    required this.onToggle,
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
-    final active = routine.isActive;
-    return Opacity(
-      opacity: active ? 1.0 : 0.55,
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: active
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: _buildRoutineIcon(routine, size: 22),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      routine.displayName(isZh),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: active ? null : Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      routine.frequencyLabelFor(isZh),
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                    ),
-                    if (routine.description != null &&
-                        routine.description!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          isZh
-                              ? routine.description!
-                              : (routine.descriptionEn ?? routine.description!),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    if (!active && routine.streak > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          isZh
-                              ? '暂停 · 最佳记录 ${routine.streak} 天'
-                              : 'Paused · best ${routine.streak} days',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: active,
-                onChanged: (_) => onToggle(),
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-              ),
-              GestureDetector(
-                onTap: onEdit,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(Icons.more_vert,
-                      size: 18, color: Colors.grey[400]),
-                ),
-              ),
-            ],
-          ),
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 4),
+            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+            Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          ],
         ),
       ),
     );
@@ -332,17 +166,17 @@ class _BuildRoutineTile extends StatelessWidget {
 // ─────────────────────────────────────────────
 // Tab 2 — 执行 / Do
 // ─────────────────────────────────────────────
-class _DoTab extends StatefulWidget {
+class _TodaySection extends StatefulWidget {
   final Set<String> manuallyAdded;
   final void Function(String id) onManualAdd;
 
-  const _DoTab({required this.manuallyAdded, required this.onManualAdd});
+  const _TodaySection({required this.manuallyAdded, required this.onManualAdd});
 
   @override
-  State<_DoTab> createState() => _DoTabState();
+  State<_TodaySection> createState() => _TodaySectionState();
 }
 
-class _DoTabState extends State<_DoTab> {
+class _TodaySectionState extends State<_TodaySection> {
   final Set<String> _recentlyCompleted = {};
   final int _lastBestStreakShown = 0;
 
@@ -449,7 +283,8 @@ class _DoTabState extends State<_DoTab> {
     final allDone = total > 0 && done == total;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       children: [
         // Date header
         Text(
@@ -786,437 +621,175 @@ class _ManualAddButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// Tab 3 — 反思 / Reflect
-// ─────────────────────────────────────────────
-class _ReflectTab extends StatelessWidget {
-  const _ReflectTab();
+class _StreakMatrix extends StatelessWidget {
+  final List<Routine> routines;
+
+  const _StreakMatrix({required this.routines});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<RoutineProvider>();
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
-    final today = DateTime.now();
-    final todayNorm = DateTime(today.year, today.month, today.day);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
-    // Start from the earliest routine creation, capped at 60 days max
-    final allRoutines = provider.routines;
-    final earliestCreated = allRoutines.isNotEmpty
-        ? allRoutines.map((r) => r.createdAt).reduce((a, b) => a.isBefore(b) ? a : b)
-        : todayNorm;
-    final earliestNorm = DateTime(earliestCreated.year, earliestCreated.month, earliestCreated.day);
-    final maxLookback = todayNorm.difference(earliestNorm).inDays.clamp(1, 60);
+    if (routines.isEmpty) return const SizedBox.shrink();
 
-    final days = List.generate(maxLookback, (i) {
-      return todayNorm.subtract(Duration(days: i + 1));
-    });
+    DateTime earliest = today;
+    bool hasData = false;
+    for (final r in routines) {
+      if (r.completionLog.isNotEmpty) {
+        hasData = true;
+        for (final c in r.completionLog) {
+          final d = DateTime(c.completedAt.year, c.completedAt.month, c.completedAt.day);
+          if (d.isBefore(earliest)) earliest = d;
+        }
+      }
+      final rDate = DateTime(r.createdAt.year, r.createdAt.month, r.createdAt.day);
+      if (rDate.isBefore(earliest)) earliest = rDate;
+    }
 
-    final daysWithData = days.where((day) {
-      return provider.getRoutinesForDate(day).isNotEmpty;
-    }).toList();
-
-    if (daysWithData.isEmpty) {
+    if (!hasData) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('📊', style: TextStyle(fontSize: 40)),
-            const SizedBox(height: 12),
-            Text(
-              isZh ? '还没有历史记录' : 'No history yet',
-              style: TextStyle(color: Colors.grey[400], fontSize: 16),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              isZh ? '完成习惯后会出现在这里' : 'Completed habits will appear here',
-              style: TextStyle(color: Colors.grey[400], fontSize: 13),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            isZh ? '暂无完成记录。开始执行你的习惯吧！' : 'No completions yet. Start doing your habits!',
+            style: TextStyle(color: Colors.grey[400]),
+          ),
         ),
       );
     }
 
-    // Active habits for summary cards
-    final activeHabits =
-        provider.routines.where((r) => r.isActive).toList();
-
-    // Compute periodic summary
-    final allCompletions = provider.routines
-        .expand((r) => r.completionLog)
-        .length;
-    int bestStreak = 0;
-    Routine? bestRoutine;
-    Routine? worstRoutine;
-    double worstRate = 1.0;
-    for (final r in activeHabits) {
-      if (r.streak > bestStreak) {
-        bestStreak = r.streak;
-        bestRoutine = r;
-      }
+    while (earliest.weekday != DateTime.sunday) {
+      earliest = earliest.subtract(const Duration(days: 1));
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // ── Periodic summary ──
-        if (activeHabits.isNotEmpty) ...[
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  DateFormat(isZh ? 'yyyy年M月' : 'MMMM yyyy').format(today),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(children: [
-                        Text('$allCompletions', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Text(isZh ? '总完成' : 'Total', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-                      ]),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(children: [
-                        Text(bestStreak > 0 ? '$bestStreak ${isZh ? "天" : "d"}' : '—', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Text(isZh ? '最佳连续' : 'Best streak', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-                      ]),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(children: [
-                        Text('${activeHabits.length}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        Text(isZh ? '活跃习惯' : 'Active', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-                      ]),
-                    ),
-                  ],
-                ),
-                if (bestRoutine != null && bestStreak >= 3) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    isZh
-                        ? '${bestRoutine.displayName(isZh)} 连续 $bestStreak 天 🔥'
-                        : '${bestRoutine.displayName(isZh)} — ${bestStreak}d streak 🔥',
-                    style: TextStyle(color: Colors.teal[600], fontSize: 12),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-
-        // ── Per-habit summary cards ──
-        if (activeHabits.isNotEmpty) ...[
-          Text(
-            isZh ? '习惯总览' : 'Habit Overview',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-            ),
-            const SizedBox(height: 4),
-          for (final habit in activeHabits)
-            _HabitSummaryCard(habit: habit),
-          const SizedBox(height: 24),
-        ],
-
-        // ── Calendar history ──
-        for (final day in daysWithData)
-          _ReflectDayRecord(
-            day: day,
-            routines: provider.getRoutinesForDate(day),
-          ),
-        const SizedBox(height: 40),
-      ],
-    );
-  }
-}
-
-class _HabitSummaryCard extends StatelessWidget {
-  final Routine habit;
-  const _HabitSummaryCard({required this.habit});
-
-  @override
-  Widget build(BuildContext context) {
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
-    final theme = Theme.of(context);
-    final now = DateTime.now();
-    final thisMonth = DateTime(now.year, now.month, 1);
-
-    // Monthly completion rate — count unique days, not total completions
-    final todayDate = DateTime(now.year, now.month, now.day);
-    final monthCompletionsDays = <String>{};
-    for (final c in habit.completionLog) {
-      final logDate = DateTime(c.completedAt.year, c.completedAt.month, c.completedAt.day);
-      // Skip future dates
-      if (logDate.isAfter(todayDate)) continue;
-      if (c.completedAt.isAfter(thisMonth.subtract(const Duration(seconds: 1)))) {
-        monthCompletionsDays.add(
-          '${c.completedAt.year}-${c.completedAt.month}-${c.completedAt.day}');
-      }
-    }
-    final monthCompletions = monthCompletionsDays.length;
-    final daysPassed = now.day;
-    final monthRate = daysPassed > 0 ? (monthCompletions / daysPassed).clamp(0.0, 1.0) : 0.0;
-
-    // Day-of-week patterns
-    final dayNames = isZh
-        ? const ['一', '二', '三', '四', '五', '六', '日']
-        : const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final dowCompletions = <int, int>{};
-    for (var i = 1; i <= 7; i++) {
-      dowCompletions[i] = 0;
-    }
-    for (final c in habit.completionLog) {
-      final dow = c.completedAt.weekday; // 1=Mon
-      dowCompletions[dow] = (dowCompletions[dow] ?? 0) + 1;
+    final weeks = <List<DateTime>>[];
+    var cursor = earliest;
+    while (cursor.isBefore(today) || cursor == today) {
+      final week = List.generate(
+        7, (d) => DateTime(cursor.year, cursor.month, cursor.day).add(Duration(days: d)));
+      weeks.add(week);
+      cursor = cursor.add(const Duration(days: 7));
     }
 
-    int? strongestDow;
-    int? weakestDow;
-    int maxVal = -1;
-    int minVal = 999999;
-    for (final e in dowCompletions.entries) {
-      if (e.value > maxVal) {
-        maxVal = e.value;
-        strongestDow = e.key;
-      }
-      if (e.value < minVal) {
-        minVal = e.value;
-        weakestDow = e.key;
-      }
+    while (cursor.isBefore(today) || cursor == today) {
+      final week = List.generate(
+        7, (d) => DateTime(cursor.year, cursor.month, cursor.day).add(Duration(days: d)));
+      weeks.add(week);
+      cursor = cursor.add(const Duration(days: 7));
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _buildRoutineIcon(habit, size: 24),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    habit.displayName(isZh),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
+    final months = <int, int>{};
+    for (int w = 0; w < weeks.length; w++) {
+      final month = weeks[w].first.month;
+      months.putIfAbsent(month, () => w);
+    }
 
-            // Stats row
-            Row(
-              children: [
-                _StatBadge(
-                  label: isZh ? '连续' : 'Streak',
-                  value: '${habit.streak} ${isZh ? "天" : "d"}',
-                ),
-                const SizedBox(width: 10),
-                _StatBadge(
-                  label: isZh ? '本月' : 'Month',
-                  value: '${(monthRate * 100).round()}%',
-                ),
-                const SizedBox(width: 10),
-                _StatBadge(
-                  label: isZh ? '完成' : 'Done',
-                  value: '$monthCompletions / $daysPassed',
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
+    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dayLabels = ['', 'M', '', 'W', '', 'F', ''];
+    const cellSize = 14.0;
+    const gap = 2.0;
 
-            // Completion bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: monthRate,
-                minHeight: 6,
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  monthRate >= 0.8 ? Colors.teal : theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // Strongest / weakest day
-            if (strongestDow != null)
-              Row(
-                children: [
-                  Text(
-                    isZh ? '最强: ' : 'Strongest: ',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ),
-                  _buildDayChip(dayNames[strongestDow - 1],
-                      isStrong: true),
-                  if (weakestDow != null && weakestDow != strongestDow) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      isZh ? '最弱: ' : 'Weakest: ',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                    ),
-                    _buildDayChip(dayNames[weakestDow - 1],
-                        isStrong: false),
-                  ],
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDayChip(String day, {required bool isStrong}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: isStrong ? Colors.teal.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        day,
-        style: TextStyle(
-          color: isStrong ? Colors.teal[700] : Colors.orange[700],
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _StatBadge extends StatelessWidget {
-  final String label;
-  final String value;
-  const _StatBadge({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Text(value,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ReflectDayRecord extends StatelessWidget {
-  final DateTime day;
-  final List<Routine> routines;
-
-  const _ReflectDayRecord({
-    required this.day,
-    required this.routines,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
-    final format = DateFormat(isZh ? 'M月d日 (EEE)' : 'MMM d (EEE)', isZh ? 'zh' : 'en');
-    final label = format.format(day);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                  fontSize: 13,
-                ),
+              Row(
+                children: [
+                  const SizedBox(width: 120),
+                  ...months.entries.map((e) => Padding(
+                    padding: EdgeInsets.only(left: e.key == 0 ? 0 : (cellSize + gap) * (e.value)),
+                    child: Text(monthNames[e.key], style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                  )),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(child: Divider(color: Colors.grey[200])),
+              const SizedBox(height: 4),
+              ...routines.map((r) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      child: Row(
+                        children: [
+                          Text(r.effectiveIcon, style: const TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              r.displayName(isZh),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...weeks.map((week) {
+                      return Row(
+                        children: week.map((d) {
+                          final completed = r.isCompletedOn(d);
+                          final isFuture = d.isAfter(today);
+                          return Container(
+                            width: cellSize,
+                            height: cellSize,
+                            margin: const EdgeInsets.all(1),
+                            decoration: BoxDecoration(
+                              color: isFuture
+                                  ? Colors.transparent
+                                  : completed
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    }),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const SizedBox(width: 120),
+                  ...List.generate(7, (i) => SizedBox(
+                    width: cellSize + gap,
+                    child: dayLabels[i].isNotEmpty
+                        ? Center(child: Text(dayLabels[i], style: const TextStyle(fontSize: 8, color: Colors.grey)))
+                        : const SizedBox.shrink(),
+                  )),
+                ],
+              ),
             ],
           ),
         ),
-        ...routines.map((r) {
-          final done = r.isCompletedOn(day);
-          final existed = !day.isBefore(r.createdAt);
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  child: _buildReflectSymbol(done, existed),
-                ),
-                const SizedBox(width: 10),
-                _buildRoutineIcon(r, size: 16),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    r.displayName(isZh),
-                    style: TextStyle(
-                      color: done ? null : Colors.grey[500],
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
         const SizedBox(height: 8),
+        Row(
+          children: [
+            Container(width: 10, height: 10, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(1))),
+            const SizedBox(width: 4),
+            Text(isZh ? '未完成' : 'Missed', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            const SizedBox(width: 16),
+            Container(width: 10, height: 10, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(1))),
+            const SizedBox(width: 4),
+            Text(isZh ? '已完成' : 'Done', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          ],
+        ),
       ],
     );
   }
-
-  static Widget _buildReflectSymbol(bool done, bool existed) {
-    if (done) {
-      return Container(
-        width: 16,
-        height: 16,
-        decoration: const BoxDecoration(
-          color: Colors.teal,
-          shape: BoxShape.circle,
-        ),
-      );
-    }
-    if (existed) {
-      return Icon(Icons.close, size: 14, color: Colors.deepOrange[300]);
-    }
-    return const SizedBox.shrink();
-  }
 }
 
-// ─────────────────────────────────────────────
 // Add / Edit dialog
 // ─────────────────────────────────────────────
-class _RoutineDialog {
+class RoutineDialog {
   static void show(BuildContext context, {Routine? existing}) {
     showDialog(
       context: context,

@@ -30,6 +30,10 @@ class StorageService {
 
     _initialized = true;
 
+    // Clean up removed tags
+    await deleteTag('tag_synthesis');
+    await deleteTag('tag_welcome');
+
     // Initialize default tags if none exist
     final tags = await getTags();
     if (tags.isEmpty) {
@@ -58,9 +62,7 @@ class StorageService {
   /// System tags — always exist, locked from editing/deletion
   List<Tag> _getSystemTags() {
     return [
-      Tag(id: 'tag_synthesis', name: 'AI综整', nameEn: 'AI Synthesis', color: '#AF52DE', category: 'system', createdAt: DateTime.now()),
       Tag(id: 'tag_private', name: '私密', nameEn: 'Private', color: '#9E9E9E', category: 'system', createdAt: DateTime.now()),
-      Tag(id: 'tag_welcome', name: '欢迎', nameEn: 'Welcome', color: '#34C759', category: 'system', createdAt: DateTime.now()),
     ];
   }
 

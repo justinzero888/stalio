@@ -390,7 +390,7 @@ class RoutineProvider extends ChangeNotifier {
         if (hour == null || minute == null) continue;
         final reminderToday = DateTime(now.year, now.month, now.day, hour, minute);
         final diff = now.difference(reminderToday);
-        if (diff.inMinutes >= 0 && diff.inMinutes < 2) {
+        if (diff.inSeconds >= 0 && diff.inSeconds < 50) {
           if (_recentlySpoken.contains(r.id)) continue; // Already spoken this window
           _recentlySpoken.add(r.id);
           final text = r.displayName(isZh);

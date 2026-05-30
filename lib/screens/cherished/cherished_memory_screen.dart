@@ -19,7 +19,7 @@ class InsightsScreen extends StatelessWidget {
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     return Scaffold(
       appBar: AppBar(
-        title: Text(isZh ? '洞察' : 'Insights'),
+        title: Text(isZh ? '统计' : 'Tallies'),
         centerTitle: true,
       ),
       body: const _InsightsContent(),

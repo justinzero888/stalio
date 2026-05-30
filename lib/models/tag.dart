@@ -69,8 +69,6 @@ class DefaultTags {
     Tag(id: 'tag_daily', name: '日常', nameEn: 'Daily', color: '#007AFF', category: 'custom', createdAt: DateTime.now()),
     Tag(id: 'tag_wellness', name: '养生', nameEn: 'Wellness', color: '#34C759', category: 'custom', createdAt: DateTime.now()),
     Tag(id: 'tag_learning', name: '学习', nameEn: 'Learning', color: '#AF52DE', category: 'custom', createdAt: DateTime.now()),
-    Tag(id: 'tag_synthesis', name: 'AI综整', nameEn: 'AI Synthesis', color: '#AF52DE', category: 'system', createdAt: DateTime.now()),
     Tag(id: 'tag_private', name: '私密', nameEn: 'Private', color: '#9E9E9E', category: 'system', createdAt: DateTime.now()),
-    Tag(id: 'tag_welcome', name: '欢迎', nameEn: 'Welcome', color: '#34C759', category: 'system', createdAt: DateTime.now()),
   ];
 }

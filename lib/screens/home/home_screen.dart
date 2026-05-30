@@ -12,10 +12,10 @@ import '../../models/entry.dart';
 import '../../widgets/calendar_widget.dart';
 import '../../widgets/entry_card.dart';
 import '../../widgets/emoji_jar.dart';
-import '../../core/services/soft_prompt_service.dart';
-import '../../l10n/app_localizations.dart';
-import '../add_entry_screen.dart';
 import '../moment/entry_detail_screen.dart';
+import '../settings/settings_screen.dart';
+import '../add_entry_screen.dart';
+import '../../l10n/app_localizations.dart';
 
 /// My Day — daily dashboard with calendar navigation + today's overview
 class HomeScreen extends StatefulWidget {
@@ -30,14 +30,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedMonth = DateTime.now();
-  bool _showOnboarding = false;
   bool _isCalendarExpanded = false;
   bool _carryForwardChecked = false;
 
   @override
   void initState() {
     super.initState();
-    _checkOnboarding();
     _loadCalendarPrefs();
   }
 
@@ -56,20 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (expanded) {
       _focusedMonth = _selectedDate;
     }
-  }
-
-  Future<void> _checkOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    final done = prefs.getBool('onboarding_done') ?? false;
-    if (!done && mounted) {
-      setState(() => _showOnboarding = true);
-    }
-  }
-
-  Future<void> _dismissOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_done', true);
-    if (mounted) setState(() => _showOnboarding = false);
   }
 
   @override
@@ -91,8 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // Onboarding banner (first-launch only)
-          if (_showOnboarding) _OnboardingBanner(onDismiss: _dismissOnboarding),
           // Calendar
           CalendarWidget(
             focusedMonth: _focusedMonth,
@@ -164,10 +146,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _buildTitle(BuildContext context) {
-    final l = AppLocalizations.of(context);
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     final isToday = _isSameDay(_selectedDate, DateTime.now());
-    final prefix = l?.myDay ?? (isZh ? '我的一天' : 'My Day');
+    final prefix = isZh ? 'Stalio:行.积.成.' : 'Stalio: Do. Tally. Grow.';
     if (isToday) return prefix;
     if (isZh) {
       return '$prefix - ${_selectedDate.month}月${_selectedDate.day}日';
@@ -262,9 +243,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Routines Section
         if (dayRoutines.isNotEmpty) ...[
-          Text(
-            isZh ? '✅ 习惯打卡' : '✅ Habit Check-in',
-            style: Theme.of(context).textTheme.titleSmall,
+          Row(
+            children: [
+              Text(
+                isZh ? '✅ 习惯打卡' : '✅ Habit Check-in',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                tooltip: isZh ? '编辑习惯' : 'Edit Habits',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SettingsScreen(initialTab: 2),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           // Pending: for past days consolidate into a red icon row;
@@ -418,9 +416,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         onTap: readOnly
             ? null
-            : () async {
+            : () {
                 context.read<RoutineProvider>().toggleComplete(routine.id, date: _selectedDate);
-                await SoftPromptService.maybeShow(context);
               },
       ),
     );
@@ -526,8 +523,8 @@ class _OnboardingBanner extends StatelessWidget {
           Expanded(
             child: Text(
               isZh
-                  ? '欢迎使用 Blinking 记忆闪烁。生命是一呼一吸、一食一化、一睁一闭。留意、记取，且惜取身边点滴清欢。'
-                  : 'Welcome to Blinking Notes. Life is breath in and out, eat and digest, blink — eyes open and shut. Notice, note, and cherish the little things around you.',
+                  ? '千里之行，始于足下。'
+                  : 'A thousand miles begins with a single step.',
               style: TextStyle(
                 color: primaryColor,
                 fontSize: 13,
@@ -625,9 +622,7 @@ class _EmojiJarSectionState extends State<_EmojiJarSection> {
           ListTile(
             leading: const Text('🫙', style: TextStyle(fontSize: 20)),
             title: Text(
-              isZh
-                  ? '情绪罐 — ${_formatDate(widget.date, isZh)}'
-                  : 'My Mood Jar — ${_formatDate(widget.date, isZh)}',
+              isZh ? '情绪罐' : 'My Mood Jar',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             trailing: IconButton(
