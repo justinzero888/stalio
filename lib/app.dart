@@ -192,7 +192,7 @@ class _MainScreenState extends State<MainScreen> {
                 color: const Color(0xFF1A2533),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.add, color: Color(0xFFFFD700), size: 28),
+              child: const Icon(Icons.add, color: Color(0xFFFFD700), size: 32, weight: 700),
             ),
             label: '',
           ),
