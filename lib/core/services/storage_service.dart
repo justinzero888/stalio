@@ -57,6 +57,18 @@ class StorageService {
         await addRoutine(routine);
       }
     }
+
+    // Seed demo entries for validation
+    final entries = await getEntries();
+    if (entries.isEmpty) {
+      final seeded = _prefs.getBool('seed_entries_done');
+      if (seeded != true) {
+        for (final e in _getSeedEntries()) {
+          await addEntry(e);
+        }
+        await _prefs.setBool('seed_entries_done', true);
+      }
+    }
   }
 
   /// System tags — always exist, locked from editing/deletion
@@ -631,5 +643,46 @@ class StorageService {
     await db.delete('routines');
     await db.delete('completions');
     await _prefs.remove('sqlite_migrated');
+  }
+
+  /// Seed entries with tags and emotions for demo/validation
+  List<Entry> _getSeedEntries() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return [
+      Entry(id: 'seed_entry_1', type: EntryType.freeform,
+        content: 'Sunshine and a perfect breeze — took a long walk by the river today.',
+        tagIds: ['tag_daily', 'tag_gratitude'], emotion: '😊',
+        createdAt: today, updatedAt: today),
+      Entry(id: 'seed_entry_2', type: EntryType.freeform,
+        content: 'Grateful for morning coffee and a chance encounter with an old friend. Warm moments in ordinary days.',
+        tagIds: ['tag_family', 'tag_gratitude'], emotion: '🥰',
+        createdAt: today.subtract(const Duration(days: 1)), updatedAt: today.subtract(const Duration(days: 1))),
+      Entry(id: 'seed_entry_3', type: EntryType.freeform,
+        content: 'Each small step taken in the right direction brings us closer to where we need to be. Progress over perfection.',
+        tagIds: ['tag_insight', 'tag_learning'], emotion: '😌',
+        createdAt: today.subtract(const Duration(days: 1)), updatedAt: today.subtract(const Duration(days: 1))),
+      Entry(id: 'seed_entry_4', type: EntryType.freeform,
+        content: 'Stillness.',
+        tagIds: ['tag_insight'], emotion: '😐',
+        createdAt: today.subtract(const Duration(days: 2)), updatedAt: today.subtract(const Duration(days: 2))),
+      Entry(id: 'seed_entry_5', type: EntryType.freeform,
+        content: 'Life is like tea — first steep is bitter, second is sweet like love, third mellows into calm clarity. Maybe the secret is simply this: find peace within the noise.',
+        tagIds: ['tag_insight', 'tag_wellness'], emotion: '😌',
+        createdAt: today.subtract(const Duration(days: 2)), updatedAt: today.subtract(const Duration(days: 2))),
+      Entry(id: 'seed_entry_6', type: EntryType.freeform,
+        content: 'Morning run felt incredible. The park was quiet at 6am, just a few birds singing. Five kilometers, drenched in sweat, but the clarity afterwards is unmatched.',
+        tagIds: ['tag_daily', 'tag_wellness'], emotion: '😊',
+        createdAt: today.subtract(const Duration(days: 3)), updatedAt: today.subtract(const Duration(days: 3))),
+      Entry(id: 'seed_entry_7', type: EntryType.freeform,
+        content: 'The rain tapped softly against the window. There\'s something beautiful about melancholy — it sharpens memory and makes the ordinary feel profound.',
+        tagIds: ['tag_insight', 'tag_learning'], emotion: '😢',
+        createdAt: today.subtract(const Duration(days: 3)), updatedAt: today.subtract(const Duration(days: 3))),
+      Entry(id: 'seed_entry_8', type: EntryType.freeform,
+        content: 'Work has been overwhelming. Back-to-back meetings and endless emails. Need to pause and breathe. Tomorrow is another chance to reset.',
+        tagIds: ['tag_learning'], emotion: '😤',
+        createdAt: today.subtract(const Duration(days: 4)), updatedAt: today.subtract(const Duration(days: 4))),
+    ];
   }
 }

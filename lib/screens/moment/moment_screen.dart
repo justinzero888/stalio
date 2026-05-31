@@ -270,6 +270,9 @@ class _MomentScreenState extends State<MomentScreen> {
   }
 
   Widget _buildEntryCard(Entry entry, EntryProvider provider, bool isZh) {
+    final tagProvider = context.read<TagProvider>();
+    final tags = tagProvider.tags.where((t) => entry.tagIds.contains(t.id)).toList();
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Semantics(
@@ -280,20 +283,28 @@ class _MomentScreenState extends State<MomentScreen> {
             color: Theme.of(context).colorScheme.primary,
           ),
           title: Text(entry.content),
-          subtitle: Text(
-            DateFormat('HH:mm').format(entry.createdAt),
-            style: const TextStyle(fontSize: 12),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (entry.tagIds.isNotEmpty) ...[
-                const Icon(Icons.label, size: 16, color: Colors.grey),
-                const SizedBox(width: 2),
-                Text('${entry.tagIds.length}',
-                    style: const TextStyle(fontSize: 12)),
-                const SizedBox(width: 4),
-              ],
+              Text(
+                DateFormat('HH:mm').format(entry.createdAt),
+                style: const TextStyle(fontSize: 12),
+              ),
+              if (tags.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Wrap(
+                    spacing: 4,
+                    children: tags.map((t) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Color(int.parse(t.color.replaceFirst('#', '0xFF'))).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(t.displayName(isZh), style: TextStyle(fontSize: 10, color: Color(int.parse(t.color.replaceFirst('#', '0xFF'))))),
+                    )).toList(),
+                  ),
+                ),
             ],
           ),
           onTap: () {

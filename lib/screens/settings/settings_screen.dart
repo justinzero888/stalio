@@ -140,7 +140,7 @@ class _GeneralTabState extends State<_GeneralTab> {
         _sectionHeader(isZh ? '关于' : 'About'),
         ListTile(
           leading: const Icon(Icons.info_outline),
-          title: const Text('Micro Habits'),
+          title: const Text('Stalio'),
           subtitle: const Text('Version 1.0.0'),
         ),
         ListTile(

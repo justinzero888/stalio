@@ -3,7 +3,7 @@
 class AppConstants {
   // App Info
   static const String appName = 'Stalio';
-  static const String appVersion = '1.2.0';
+  static const String appVersion = '1.0.0';
 
   // Feature Switches
   static const bool kUseMultiTurnChat = false;

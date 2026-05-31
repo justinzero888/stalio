@@ -100,13 +100,12 @@ class EntryCard extends StatelessWidget {
           const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
         if (entry.tagIds.contains('tag_private'))
           const SizedBox(width: 4),
-        GestureDetector(
-          onTap: () {
-            final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-            SharePlus.instance.share(ShareParams(text: entry.content, subject: isZh ? '来自 Blinking' : 'From Blinking', sharePositionOrigin: const Rect.fromLTWH(0, 0, 1, 1)));
-          },
-          child: const Icon(Icons.share, size: 16, color: Colors.grey),
-        ),
+        if (entry.tagIds.any((id) => id != 'tag_private')) ...[
+          Icon(Icons.label_outline, size: 14, color: Colors.grey[500]),
+          const SizedBox(width: 2),
+          Text('${entry.tagIds.where((id) => id != 'tag_private').length}',
+              style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+        ],
       ],
     );
   }
@@ -186,13 +185,12 @@ class EntryCard extends StatelessWidget {
           const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
         if (entry.tagIds.contains('tag_private'))
           const SizedBox(width: 4),
-        GestureDetector(
-          onTap: () {
-            final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-            SharePlus.instance.share(ShareParams(text: entry.content, subject: isZh ? '来自 Blinking' : 'From Blinking', sharePositionOrigin: const Rect.fromLTWH(0, 0, 1, 1)));
-          },
-          child: const Icon(Icons.share, size: 16, color: Colors.grey),
-        ),
+        if (entry.tagIds.any((id) => id != 'tag_private')) ...[
+          Icon(Icons.label_outline, size: 14, color: Colors.grey[500]),
+          const SizedBox(width: 2),
+          Text('${entry.tagIds.where((id) => id != 'tag_private').length}',
+              style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+        ],
       ],
     );
   }
