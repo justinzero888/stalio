@@ -76,5 +76,7 @@
 	<string>Stalio saves exported files and shared images to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Stalio uses the microphone for voice reminders of your daily habits.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
