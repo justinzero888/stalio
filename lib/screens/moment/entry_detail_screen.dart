@@ -12,7 +12,6 @@ import '../../providers/tag_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/tag_chip.dart';
 import '../add_entry_screen.dart';
-import '../chorus/post_to_chorus_sheet.dart';
 
 class EntryDetailScreen extends StatefulWidget {
   final Entry entry;
@@ -90,26 +89,6 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
                 sharePositionOrigin: const Rect.fromLTWH(0, 0, 1, 1),
               ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.public_outlined),
-            tooltip: isZh ? '发布到 Chorus' : 'Post to Chorus',
-            onPressed: () async {
-              final posted = await PostToChorusSheet.show(
-                context,
-                initialText: entry.content,
-              );
-              if (posted && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(isZh ? '已发布到 Chorus ✓' : "Posted to the chorus ✓"),
-                    backgroundColor: const Color(0xFF6B8E77),
-                    behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              }
-            },
           ),
         ],
       ),
