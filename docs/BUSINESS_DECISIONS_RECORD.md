@@ -27,34 +27,35 @@
 | AI key references | ✅ Done (June 10) | OpenRouter key purged from git history; GitHub push protection active |
 | RevenueCat/purchases cleanup | 🔲 Phase 5 Item 13 | Delete `purchases_service.dart`, `entitlement_service.dart`, `paywall_screen.dart` |
 | AdMob account | ✅ Done | Account created |
-| AdMob ad units | 🔲 In process | Business owner provisioning |
+| AdMob ad units | ✅ Done | Values received: Android `1333457063`, iOS `1302206478` |
+| AdMob App IDs | ✅ Done | Android: `~1493778160`, iOS: `~5735736505` |
 | `remove_ads` IAP (Google Play) | 🔲 In process | Business owner creating product |
 | `remove_ads` IAP (App Store) | 🔲 In process | Business owner creating product |
-| Privacy Policy URL | 🔲 Pending | Business owner to host and provide URL |
+| Privacy Policy URL | ✅ Done | `https://orbacetech.com/stalio-privacy` |
 
 ---
 
 ## Instructions for Business Owner
 
-### What to provide to the dev team
-
-The following 6 values are needed to complete the AdMob and IAP integration.  
-Please fill in the blanks and return this section to the dev team.
+### Values Received — June 10, 2026
 
 ```
-=== AdMob ===
-AdMob App ID (iOS):            ca-app-pub-________________________________~
-AdMob App ID (Android):        ca-app-pub-________________________________~
-Banner Ad Unit ID (iOS):       ca-app-pub-________________________________/____________
-Banner Ad Unit ID (Android):   ca-app-pub-________________________________/____________
+=== AdMob (Android) ===
+AdMob App ID (Android):        ca-app-pub-7497527413129091~1493778160
+Banner Ad Unit ID (Android):   ca-app-pub-7497527413129091/1333457063
+
+=== AdMob (iOS) ===
+AdMob App ID (iOS):            ca-app-pub-7497527413129091~5735736505
+Banner Ad Unit ID (iOS):       ca-app-pub-7497527413129091/1302206478
 
 === In-App Purchase ===
-Google Play product ID:        ___________________________________________
-App Store product ID:          ___________________________________________
+Google Play product ID:        remove_ads (awaiting creation)
+App Store product ID:          remove_ads (awaiting creation)
+Price:                         $2.99
 
 === Legal ===
-Privacy Policy URL:            ___________________________________________
-Terms of Service URL:          ___________________________________________
+Privacy Policy URL:            https://orbacetech.com/stalio-privacy
+Terms of Service URL:          (pending)
 ```
 
 ### Where to find these values

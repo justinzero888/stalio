@@ -1,0 +1,14 @@
+{
+  "commit": "",
+  "branch": "main",
+  "files_changed": [],
+  "commit_message": "",
+  "sim_status": {
+    "iphone": "not_booted",
+    "ipad": "not_booted",
+    "android": "not_booted"
+  },
+  "built_at": "",
+  "test_count": 0,
+  "analyze_errors": 0
+}

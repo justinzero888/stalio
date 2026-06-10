@@ -1,0 +1,12 @@
+{
+  "passed": 0,
+  "failed": 0,
+  "total_flows": 0,
+  "platforms": {
+    "iphone": { "passed": 0, "failed": 0, "flows": [] },
+    "ipad": { "passed": 0, "failed": 0, "flows": [] },
+    "android": { "passed": 0, "failed": 0, "flows": [] }
+  },
+  "timestamp": "",
+  "commit_tested": ""
+}

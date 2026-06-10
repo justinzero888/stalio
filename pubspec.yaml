@@ -44,8 +44,10 @@ dependencies:
   # Charts
   fl_chart: ^0.70.0
 
+  # Ads
+  google_mobile_ads: ^5.2.0
+
   # IAP
-  purchases_flutter: ^9.8.0
   flutter_local_notifications: ^21.0.0
   timezone: ^0.11.0
   flutter_tts: ^4.2.5
