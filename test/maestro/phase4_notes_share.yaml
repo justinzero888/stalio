@@ -4,7 +4,7 @@
 #
 # Pre-requisite: Entries must exist (seed data)
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-P4-SHARE-01: Moments tab renders with entry cards

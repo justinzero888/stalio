@@ -2,7 +2,7 @@
 # Validates EN ↔ ZH toggle works, all 5 screens render correctly in both locales
 # Run: maestro test test/maestro/phase3_l10n.yaml
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-L10N-01: Fresh launch → My Day in English

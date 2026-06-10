@@ -4,7 +4,7 @@
 #
 # Pre-requisite: phase4_tag_categories must pass first
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-P4-BULK-01: Long-press enters multi-select mode

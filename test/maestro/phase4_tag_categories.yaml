@@ -4,7 +4,7 @@
 #
 # Pre-requisite: Phase 3 sign-off
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-P4-CAT-01: Settings → Tags tab renders with expandable categories

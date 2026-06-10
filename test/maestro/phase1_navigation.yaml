@@ -2,7 +2,7 @@
 # Validates 5-tab bottom nav, screen rendering, no crashes
 # Run: maestro test test/maestro/phase1_navigation.yaml
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-NAV-01: App launches and shows My Day screen

@@ -4,7 +4,7 @@
 #
 # Pre-requisite: Phase 1 must be signed off
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-P2-01: Backup button visible in Settings → General

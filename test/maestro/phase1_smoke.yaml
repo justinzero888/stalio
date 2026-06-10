@@ -2,7 +2,7 @@
 # Full-screen visual validation across all tabs
 # Run: maestro test test/maestro/phase1_smoke.yaml
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-SMOKE-01: Cold launch → My Day renders

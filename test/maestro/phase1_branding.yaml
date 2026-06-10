@@ -2,7 +2,7 @@
 # Validates app title is Stalio (not Blinking), navy + gold colors
 # Run: maestro test test/maestro/phase1_branding.yaml
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-BRAND-01: Settings screen shows Stalio branding (not Blinking)

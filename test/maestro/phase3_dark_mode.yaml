@@ -2,7 +2,7 @@
 # Validates Light/Dark/System theme toggle, all screens render correctly in dark mode
 # Run: maestro test test/maestro/phase3_dark_mode.yaml
 
-appId: com.microhabits.micro_habits
+appId: com.orbacetech.stalio
 ---
 # ---------------------------------------------------------------------------
 # TC-DARK-01: Fresh launch in light mode — My Day renders
