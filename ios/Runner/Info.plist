@@ -70,5 +70,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Stalio uses your photo library to attach images to journal entries.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Stalio saves exported files and shared images to your photo library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Stalio uses the microphone for voice reminders of your daily habits.</string>
 </dict>
 </plist>
