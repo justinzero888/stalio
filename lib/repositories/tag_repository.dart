@@ -48,6 +48,7 @@ class TagRepository {
     required String nameEn,
     required String color,
     String category = 'custom',
+    String? categoryId,
   }) async {
     final tag = Tag(
       id: _uuid.v4(),
@@ -55,6 +56,7 @@ class TagRepository {
       nameEn: nameEn,
       color: color,
       category: category,
+      categoryId: categoryId,
       createdAt: DateTime.now(),
     );
     await _storage.addTag(tag);
@@ -93,5 +95,24 @@ class TagRepository {
   Future<List<Tag>> getByIds(List<String> ids) async {
     final allTags = await getAll();
     return allTags.where((t) => ids.contains(t.id)).toList();
+  }
+
+  /// Merge source tags into [targetTagId], reassigning entries, then delete sources.
+  Future<void> mergeTags(String targetTagId, List<String> sourceTagIds) async {
+    for (final srcId in sourceTagIds) {
+      if (srcId == targetTagId) continue;
+      await _storage.reassignEntryTags(srcId, targetTagId);
+    }
+    await _storage.deleteTagsByIds(sourceTagIds);
+  }
+
+  /// Batch update tags by applying [transform] to each matching ID.
+  Future<void> batchUpdate(List<String> ids, Tag Function(Tag) transform) async {
+    final allTags = await getAll();
+    for (final id in ids) {
+      final idx = allTags.indexWhere((t) => t.id == id);
+      if (idx == -1) continue;
+      await _storage.updateTag(transform(allTags[idx]));
+    }
   }
 }

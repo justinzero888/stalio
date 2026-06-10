@@ -86,7 +86,7 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
             onPressed: () => SharePlus.instance.share(
               ShareParams(
                 text: entry.content,
-                subject: isZh ? '来自 Blinking' : 'From Blinking',
+                subject: isZh ? '来自 Stalio' : 'From Stalio',
                 sharePositionOrigin: const Rect.fromLTWH(0, 0, 1, 1),
               ),
             ),

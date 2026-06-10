@@ -1,0 +1,55 @@
+# Maestro Flow — Phase 4: Notes Share
+# Validates multi-select + format preview + share in Moments tab
+# Run: maestro test test/maestro/phase4_notes_share.yaml
+#
+# Pre-requisite: Entries must exist (seed data)
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SHARE-01: Moments tab renders with entry cards
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "Notes"
+- assertVisible
+- takeScreenshot: screenshots/p4_share_01_notes
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SHARE-02: Long-press on entry enters selection mode
+# ---------------------------------------------------------------------------
+- longPressOn:
+    text: ".*"
+    index: 0
+- assertVisible: "selected"
+- assertVisible: "share"
+    optional: true
+- takeScreenshot: screenshots/p4_share_02_select_mode
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SHARE-03: Share preview dialog shows format options
+# ---------------------------------------------------------------------------
+- tapOn:
+    text: "share"
+    optional: true
+- takeScreenshot: screenshots/p4_share_03_preview
+- tapOn: "Cancel"
+    optional: true
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SHARE-04: Close selection mode returns to normal view
+# ---------------------------------------------------------------------------
+- tapOn:
+    text: "close"
+    optional: true
+- assertVisible
+- takeScreenshot: screenshots/p4_share_04_normal
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SHARE-05: Category filter chips visible in Moments
+# ---------------------------------------------------------------------------
+- scroll
+- takeScreenshot: screenshots/p4_share_05_filter_chips

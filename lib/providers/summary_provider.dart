@@ -339,6 +339,20 @@ class SummaryProvider extends ChangeNotifier {
         .toList();
   }
 
+  /// Usage count for a specific tag.
+  int tagUsageCount(String tagId) {
+    int count = 0;
+    for (final entry in _entryProvider.allEntries) {
+      if (entry.tagIds.contains(tagId)) count++;
+    }
+    return count;
+  }
+
+  /// Entries that have at least one tag.
+  List<Entry> getEntriesWithTags() {
+    return _entryProvider.allEntries.where((e) => e.tagIds.isNotEmpty).toList();
+  }
+
   /// Average word count per entry (mixed CJK + English word counting)
   double get averageEntryLength {
     final entries = _entryProvider.allEntries;

@@ -1,0 +1,46 @@
+# Maestro Flow — Phase 1: App Branding & Color Theme
+# Validates app title is Stalio (not Blinking), navy + gold colors
+# Run: maestro test test/maestro/phase1_branding.yaml
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-BRAND-01: Settings screen shows Stalio branding (not Blinking)
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "Settings"
+- assertVisible
+- takeScreenshot: screenshots/p1_brand_01_settings_stalio
+
+---
+# ---------------------------------------------------------------------------
+# TC-BRAND-02: Privacy Policy shows Stalio (not Blinking)
+# ---------------------------------------------------------------------------
+- scroll
+- tapOn: "Privacy Policy"
+- assertVisible: "Stalio"
+- assertNotVisible: "Blinking"
+- assertNotVisible: "记忆闪烁"
+- assertNotVisible: "Pro subscription"
+- takeScreenshot: screenshots/p1_brand_02_privacy_english
+- back
+
+---
+# ---------------------------------------------------------------------------
+# TC-BRAND-03: Terms of Service shows Stalio (not Blinking)
+# ---------------------------------------------------------------------------
+- tapOn: "Terms of Service"
+- assertVisible: "Stalio"
+- assertNotVisible: "Blinking"
+- assertNotVisible: "AI Assistant"
+- assertNotVisible: "Pro subscription"
+- takeScreenshot: screenshots/p1_brand_03_terms_english
+- back
+
+---
+# ---------------------------------------------------------------------------
+# TC-BRAND-04: My Day screen renders with navy/gold theme (no green)
+# ---------------------------------------------------------------------------
+- tapOn: "My Day"
+- assertVisible
+- takeScreenshot: screenshots/p1_brand_04_mytab_theme

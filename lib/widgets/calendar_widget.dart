@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/locale_provider.dart';
+import '../l10n/app_localizations.dart';
 
 class CalendarWidget extends StatelessWidget {
   final DateTime selectedDate;
@@ -78,13 +79,16 @@ class CalendarWidget extends StatelessWidget {
               onMonthChanged(previousMonth);
             },
           ),
-          Text(
+          Expanded(
+            child: Text(
             _isZh(context)
                 ? DateFormat('yyyy年M月').format(focusedMonth)
-                : DateFormat('MMMM yyyy').format(focusedMonth),
+                : DateFormat('MMM yyyy').format(focusedMonth),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
+            textAlign: TextAlign.center,
+          ),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -115,9 +119,10 @@ class CalendarWidget extends StatelessWidget {
   }
 
   Widget _buildWeekdayLabels(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final weekdays = _isZh(context)
-        ? ['日', '一', '二', '三', '四', '五', '六']
-        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        ? [l.sun, l.mon, l.tue, l.wed, l.thu, l.fri, l.sat]
+        : [l.sun, l.mon, l.tue, l.wed, l.thu, l.fri, l.sat];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -169,7 +174,7 @@ class CalendarWidget extends StatelessWidget {
                         ? Theme.of(context).colorScheme.primary
                         : null,
                     border: isToday
-                        ? Border.all(color: const Color(0xFF2A9D8F), width: 2)
+                        ? Border.all(color: const Color(0xFF10317D), width: 2)
                         : null,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -209,7 +214,7 @@ class CalendarWidget extends StatelessWidget {
                                 backgroundColor: isSelected ? Colors.white38 : Colors.grey[300],
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   habitStatus.completed == habitStatus.total
-                                      ? (isSelected ? Colors.white : Colors.green)
+                                      ? (isSelected ? Colors.white : const Color(0xFFE0B84F))
                                       : (isSelected ? Colors.white70 : Colors.orange),
                                 ),
                               ),
@@ -271,7 +276,7 @@ class CalendarWidget extends StatelessWidget {
             ? Theme.of(context).colorScheme.primary
             : null,
         border: isToday
-            ? Border.all(color: const Color(0xFF2A9D8F), width: 2)
+            ? Border.all(color: const Color(0xFF10317D), width: 2)
             : null,
         borderRadius: BorderRadius.circular(8),
       ),
@@ -319,7 +324,7 @@ class CalendarWidget extends StatelessWidget {
                       backgroundColor: Colors.grey[300],
                       valueColor: AlwaysStoppedAnimation<Color>(
                         habitStatus.completed == habitStatus.total
-                            ? Colors.green
+                            ? const Color(0xFFE0B84F)
                             : Colors.orange,
                       ),
                     ),

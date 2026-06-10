@@ -1,0 +1,48 @@
+# Maestro Flow — Phase 4: Bulk Tag Operations
+# Validates multi-select, assign category, merge, recolor in Settings → Tags
+# Run: maestro test test/maestro/phase4_bulk_operations.yaml
+#
+# Pre-requisite: phase4_tag_categories must pass first
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P4-BULK-01: Long-press enters multi-select mode
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "Settings"
+- tapOn: "Tags"
+- longPressOn: "Family"
+    optional: true
+- takeScreenshot: screenshots/p4_bulk_01_select_mode
+- tapOn: "Cancel"
+    optional: true
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-BULK-02: Add Tag dialog opens with category dropdown
+# ---------------------------------------------------------------------------
+- scroll
+- tapOn: "Add Tag"
+- assertVisible: "Tag name"
+- takeScreenshot: screenshots/p4_bulk_02_add_tag
+- tapOn: "Cancel"
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-BULK-03: Edit tag dialog opens with category selector
+# ---------------------------------------------------------------------------
+- tapOn:
+    point: "88%,20%"
+    label: "Edit tag button"
+    optional: true
+- takeScreenshot: screenshots/p4_bulk_03_edit_tag
+- tapOn: "Cancel"
+    optional: true
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-BULK-04: Tags tab renders all default tags
+# ---------------------------------------------------------------------------
+- assertVisible
+- takeScreenshot: screenshots/p4_bulk_04_all_tags

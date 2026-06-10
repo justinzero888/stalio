@@ -1,0 +1,63 @@
+# Maestro Flow — Phase 4: Tag Categories
+# Validates category CRUD + expandable sections in Settings → Tags
+# Run: maestro test test/maestro/phase4_tag_categories.yaml
+#
+# Pre-requisite: Phase 3 sign-off
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CAT-01: Settings → Tags tab renders with expandable categories
+# ---------------------------------------------------------------------------
+- launchApp:
+    clearState: true
+- tapOn: "Settings"
+- tapOn: "Tags"
+- assertVisible
+- takeScreenshot: screenshots/p4_cat_01_tags_tab
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CAT-02: Add Category dialog opens and can be cancelled
+# ---------------------------------------------------------------------------
+- scroll
+- tapOn: "Add Category"
+- assertVisible: "Category name"
+- assertVisible: "Cancel"
+- takeScreenshot: screenshots/p4_cat_02_add_dialog
+- tapOn: "Cancel"
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CAT-03: Create a new category — appears in list
+# ---------------------------------------------------------------------------
+- scroll
+- tapOn: "Add Category"
+- inputText: "Health"
+- tapOn: "Add"
+- assertVisible: "Health"
+- takeScreenshot: screenshots/p4_cat_03_created
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CAT-04: Edit category changes name
+# ---------------------------------------------------------------------------
+- tapOn:
+    point: "88%,12%"
+    label: "Edit category button"
+- assertVisible: "Edit Category"
+- takeScreenshot: screenshots/p4_cat_04_edit
+- tapOn: "Cancel"
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CAT-05: Delete category shows confirmation
+# ---------------------------------------------------------------------------
+- longPressOn: "Health"
+    optional: true
+- tapOn:
+    point: "92%,12%"
+    label: "Delete icon"
+    optional: true
+- takeScreenshot: screenshots/p4_cat_05_delete
+- tapOn: "Cancel"

@@ -58,18 +58,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final locale = context.watch<LocaleProvider>().locale;
-    final isZh = locale.languageCode == 'zh';
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_buildTitle(context)),
+        title: Text(_buildTitle(context, l)),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.today),
             onPressed: _goToToday,
-            tooltip: isZh ? '今天' : 'Today',
+            tooltip: l.today,
           ),
         ],
       ),
@@ -90,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const Divider(height: 1),
           // Today's Overview
           Expanded(
-            child: _buildTodayOverview(context),
+            child: _buildTodayOverview(context, l),
           ),
         ],
       ),
@@ -145,10 +144,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return result;
   }
 
-  String _buildTitle(BuildContext context) {
+  String _buildTitle(BuildContext context, AppLocalizations l) {
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     final isToday = _isSameDay(_selectedDate, DateTime.now());
-    final prefix = isZh ? 'Stalio:行.积.成.' : 'Stalio: Do. Tally. Grow.';
+    final prefix = l.appTitleTagline;
     if (isToday) return prefix;
     if (isZh) {
       return '$prefix - ${_selectedDate.month}月${_selectedDate.day}日';
@@ -180,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildTodayOverview(BuildContext context) {
+  Widget _buildTodayOverview(BuildContext context, AppLocalizations l) {
     final locale = context.watch<LocaleProvider>().locale;
     final isZh = locale.languageCode == 'zh';
     final entries = context.watch<EntryProvider>().entries;
@@ -228,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // List Entries Section — pinned above habits
         if (dayListEntries.isNotEmpty) ...[
           Text(
-            isZh ? '📋 今日清单' : '📋 Lists',
+            l.listsSectionHeader,
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
@@ -245,14 +244,16 @@ class _HomeScreenState extends State<HomeScreen> {
         if (dayRoutines.isNotEmpty) ...[
           Row(
             children: [
+              const Icon(Icons.check_circle, color: Color(0xFFE0B84F), size: 18),
+              const SizedBox(width: 6),
               Text(
-                isZh ? '✅ 习惯打卡' : '✅ Habit Check-in',
+                l.habitCheckIn,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.edit_outlined, size: 18),
-                tooltip: isZh ? '编辑习惯' : 'Edit Habits',
+                tooltip: l.editHabits,
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -317,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                      Icon(Icons.check_circle, color: const Color(0xFFE0B84F), size: 18),
                       const SizedBox(width: 8),
                       Wrap(
                         spacing: 6,
@@ -338,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Notes Section
         if (dayNoteEntries.isNotEmpty) ...[
           Text(
-            isZh ? '📝 笔记' : '📝 Notes',
+            l.notesSectionHeader,
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
@@ -375,16 +376,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    isZh
-                        ? (isToday ? '今天还没有记录' : '当天没有记录')
-                        : (isToday ? 'No entries today' : 'No entries on this day'),
+                    isToday ? l.noEntriesEmptyToday : l.noEntriesEmptyPast,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    isZh ? '点击 + 添加记录' : 'Tap + to add an entry',
+                    l.noEntriesEmptyAction,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
@@ -400,16 +399,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildRoutineChecklistItem(BuildContext context, Routine routine, {bool readOnly = false}) {
     final isCompleted = routine.isCompletedOn(_selectedDate);
     final isMissed = readOnly && !isCompleted;
-    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
+    final l = AppLocalizations.of(context)!;
 
     return Card(
       child: ListTile(
         leading: Icon(
           isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
-          color: isCompleted ? Colors.green : Colors.grey,
+          color: isCompleted ? const Color(0xFFE0B84F) : Colors.grey,
         ),
         title: Text(
-          routine.displayName(isZh),
+          routine.displayName(l.localeName == 'zh'),
           style: TextStyle(
             color: isMissed ? Colors.red[300] : null,
           ),
@@ -508,7 +507,7 @@ class _OnboardingBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
+    final l = AppLocalizations.of(context)!;
     final primaryColor = Theme.of(context).colorScheme.primary;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -522,9 +521,7 @@ class _OnboardingBanner extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              isZh
-                  ? '千里之行，始于足下。'
-                  : 'A thousand miles begins with a single step.',
+              l.welcomeBannerText,
               style: TextStyle(
                 color: primaryColor,
                 fontSize: 13,
@@ -601,7 +598,6 @@ class _EmojiJarSectionState extends State<_EmojiJarSection> {
 
   String _formatDate(DateTime date, bool isZh) {
     final day = DateFormat('E·MMMd', isZh ? 'zh' : 'en').format(date);
-    // Remove comma: "Mon·May 9" instead of "Mon,May 9"
     return day.replaceAll(',', '');
   }
 
@@ -612,7 +608,7 @@ class _EmojiJarSectionState extends State<_EmojiJarSection> {
 
   @override
   Widget build(BuildContext context) {
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
+    final l = AppLocalizations.of(context)!;
     final emotions = context.watch<JarProvider>().getDayEmotions(widget.date);
     final hasEmoji = emotions.isNotEmpty;
 
@@ -622,7 +618,7 @@ class _EmojiJarSectionState extends State<_EmojiJarSection> {
           ListTile(
             leading: const Text('🫙', style: TextStyle(fontSize: 20)),
             title: Text(
-              isZh ? '情绪罐' : 'My Mood Jar',
+              l.emojiJarTitle,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             trailing: IconButton(

@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:micro_habits/core/services/storage_service.dart';
-import 'package:micro_habits/core/services/database_service.dart';
-import 'package:micro_habits/models/routine.dart';
+import 'package:stalio/core/services/storage_service.dart';
+import 'package:stalio/core/services/database_service.dart';
+import 'package:stalio/models/routine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 

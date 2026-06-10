@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive_io.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as path_pkg;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -236,16 +238,27 @@ class ExportService {
   }
 
   /// Export data as CSV (returns file path)
-  Future<String> exportCsv({bool exportEntries = true, bool exportRoutines = true}) async {
-    final docDir = await getApplicationDocumentsDirectory();
+  Future<String> exportCsv({
+    bool exportEntries = true,
+    bool exportRoutines = true,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? docDirOverride,
+  }) async {
+    final docDir = docDirOverride != null ? Directory(docDirOverride) : await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final archive = Archive();
 
     if (exportEntries) {
-      final entries = await _storage.getEntries();
+      var entries = await _storage.getEntries();
+      if (startDate != null) {
+        entries = entries.where((e) => !e.createdAt.isBefore(startDate)).toList();
+      }
+      if (endDate != null) {
+        entries = entries.where((e) => e.createdAt.isBefore(endDate.add(const Duration(days: 1)))).toList();
+      }
       final csvData = entries.map((e) {
         final map = e.toJson();
-        // Flatten simple fields for CSV readability
         map['tagIds'] = e.tagIds.join('|');
         map['mediaUrls'] = e.mediaUrls.join('|');
         return map;
@@ -259,7 +272,6 @@ class ExportService {
       final routines = await _storage.getRoutines();
       final csvData = routines.map((r) {
         final map = r.toJson();
-        // Skip completionLog for flat routine CSV, maybe add separate one?
         map.remove('completionLog');
         return map;
       }).toList();
@@ -274,6 +286,131 @@ class ExportService {
     await file.writeAsBytes(zipData);
     
     return filePath;
+  }
+
+  /// Export entries to PDF with title page, entry list, streak summary.
+  /// [onProgress] receives a 0.0–1.0 progress value for large exports.
+  Future<String> exportPdf({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? docDirOverride,
+    void Function(double)? onProgress,
+  }) async {
+    final docDir = docDirOverride != null ? Directory(docDirOverride) : await getApplicationDocumentsDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    var entries = await _storage.getEntries();
+    if (startDate != null) entries = entries.where((e) => !e.createdAt.isBefore(startDate)).toList();
+    if (endDate != null) entries = entries.where((e) => e.createdAt.isBefore(endDate.add(const Duration(days: 1)))).toList();
+    entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final tags = await _storage.getTags();
+    final routines = await _storage.getRoutines();
+    final total = entries.length;
+    onProgress?.call(0.0);
+
+    final pdf = pw.Document();
+    final pageFormat = PdfPageFormat.a4;
+
+    // Title page
+    pdf.addPage(pw.MultiPage(
+      pageFormat: pageFormat,
+      build: (ctx) => [
+        pw.SizedBox(height: 180),
+        pw.Center(child: pw.Text('Stalio', style: pw.TextStyle(fontSize: 48, fontWeight: pw.FontWeight.bold))),
+        pw.SizedBox(height: 16),
+        pw.Center(child: pw.Text('Journal Export', style: pw.TextStyle(fontSize: 24, color: PdfColors.grey700))),
+        pw.SizedBox(height: 32),
+        pw.Center(child: pw.Text('${entries.length} entries', style: const pw.TextStyle(fontSize: 16))),
+        if (startDate != null || endDate != null)
+          pw.Center(child: pw.Text('${_fmt(startDate ?? entries.last.createdAt)} — ${_fmt(endDate ?? entries.first.createdAt)}', style: const pw.TextStyle(fontSize: 14, color: PdfColors.grey600))),
+        pw.SizedBox(height: 24),
+        pw.Center(child: pw.Text('Generated ${_fmt(DateTime.now())}', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey500))),
+      ],
+    ));
+
+    // Entry list
+    final moodCounts = <String, int>{};
+    final dateCounts = <String, int>{};
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      if (entry.emotion != null) {
+        moodCounts[entry.emotion!] = (moodCounts[entry.emotion!] ?? 0) + 1;
+      }
+      final dateKey = '${entry.createdAt.year}-${entry.createdAt.month.toString().padLeft(2, '0')}-${entry.createdAt.day.toString().padLeft(2, '0')}';
+      dateCounts[dateKey] = (dateCounts[dateKey] ?? 0) + 1;
+
+      pdf.addPage(pw.MultiPage(pageFormat: pageFormat, build: (ctx) {
+        final entryTags = tags.where((t) => entry.tagIds.contains(t.id)).toList();
+        return [
+          pw.Text(_fmt(entry.createdAt), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+          if (entry.emotion != null) pw.Text('Mood: ${entry.emotion}', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600)),
+          if (entryTags.isNotEmpty) pw.Text('Tags: ${entryTags.map((t) => t.name).join(', ')}', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey600)),
+          pw.SizedBox(height: 8),
+          pw.Text(entry.content.isEmpty ? '(no content)' : entry.content, style: const pw.TextStyle(fontSize: 13)),
+          pw.SizedBox(height: 16),
+        ];
+      }));
+
+      if (onProgress != null && total > 0) {
+        onProgress((i + 1) / total * 0.9);
+      }
+    }
+
+    // Streak summary page
+    final streak = _calcStreak(entries);
+    final topMoods = moodCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final activeDays = dateCounts.length;
+    final totalRoutines = routines.where((r) => r.isActive).length;
+
+    pdf.addPage(pw.MultiPage(pageFormat: pageFormat, build: (ctx) => [
+      pw.Header(text: 'Summary', level: 0),
+      pw.SizedBox(height: 16),
+      pw.Text('Total Entries: ${entries.length}', style: const pw.TextStyle(fontSize: 14)),
+      pw.Text('Active Days: $activeDays', style: const pw.TextStyle(fontSize: 14)),
+      pw.Text('Current Streak: $streak days', style: const pw.TextStyle(fontSize: 14)),
+      pw.Text('Active Habits: $totalRoutines', style: const pw.TextStyle(fontSize: 14)),
+      pw.SizedBox(height: 16),
+      if (topMoods.isNotEmpty) ...[
+        pw.Text('Top Moods:', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+        for (final m in topMoods.take(5))
+          pw.Text('  ${m.key}: ${m.value}', style: const pw.TextStyle(fontSize: 13)),
+      ],
+    ]));
+
+    onProgress?.call(1.0);
+
+    final pdfBytes = await pdf.save();
+    final filePath = path_pkg.join(docDir.path, 'stalio_export_$timestamp.pdf');
+    final file = File(filePath);
+    await file.writeAsBytes(pdfBytes);
+    return filePath;
+  }
+
+  String _fmt(DateTime dt) {
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    return '${dt.year}-$m-$d';
+  }
+
+  int _calcStreak(List<Entry> entries) {
+    if (entries.isEmpty) return 0;
+    final days = entries.map((e) => DateTime(e.createdAt.year, e.createdAt.month, e.createdAt.day)).toSet().toList()..sort();
+    int streak = 1;
+    final today = DateTime.now();
+    final todayDay = DateTime(today.year, today.month, today.day);
+    if (days.isEmpty || !days.last.isAtSameMomentAs(todayDay)) {
+      if (days.isEmpty || days.last.isBefore(todayDay.subtract(const Duration(days: 1)))) return 0;
+      if (days.last == todayDay.subtract(const Duration(days: 1))) streak = 0;
+    }
+    for (int i = days.length - 2; i >= 0; i--) {
+      if (days[i + 1].difference(days[i]).inDays == 1) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
   }
 
   /// Export only JSON data as a file

@@ -6,6 +6,7 @@ import '../providers/entry_provider.dart';
 import '../providers/locale_provider.dart';
 import '../providers/tag_provider.dart';
 import '../models/entry.dart';
+import '../models/tag.dart';
 import '../models/media.dart';
 import '../core/services/file_service.dart';
 import '../core/config/emotions.dart';
@@ -31,6 +32,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
 
   final List<Media> _mediaItems = [];
   final Set<String> _selectedTagIds = {};
+  Set<String> _suggestedTagIds = {};
   String? _selectedEmotion;
   EntryFormat _selectedFormat = EntryFormat.note;
   final List<ListItem> _listItems = [];
@@ -39,6 +41,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   void initState() {
     super.initState();
     _loadExistingEntry();
+    _textController.addListener(_updateSuggestions);
   }
 
   bool get _isPastEntry {
@@ -115,7 +118,58 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       } else {
         _selectedTagIds.add(tagId);
       }
+      _suggestedTagIds.remove(tagId);
     });
+  }
+
+  void _updateSuggestions() {
+    if (!mounted) return;
+    final text = _textController.text.toLowerCase();
+    final suggested = <String>{};
+    final tagProvider = context.read<TagProvider>();
+    final tags = tagProvider.tags;
+
+    for (final tag in tags) {
+      if (_selectedTagIds.contains(tag.id)) continue;
+      final keywords = _tagKeywords(tag);
+      for (final kw in keywords) {
+        if (text.contains(kw.toLowerCase())) {
+          suggested.add(tag.id);
+          break;
+        }
+      }
+    }
+
+    if (!_setEquals(_suggestedTagIds, suggested)) {
+      setState(() => _suggestedTagIds = suggested);
+    }
+  }
+
+  bool _setEquals(Set<String> a, Set<String> b) {
+    if (a.length != b.length) return false;
+    return a.containsAll(b);
+  }
+
+  List<String> _tagKeywords(Tag tag) {
+    switch (tag.id) {
+      case 'tag_family':
+        return ['家人', 'family', '妈妈', '爸爸', '孩子', '父母', 'mom', 'dad', 'parent', 'child'];
+      case 'tag_health':
+      case 'tag_wellness':
+        return ['健康', '养生', 'health', '运动', '锻炼', '跑步', '冥想', 'exercise', 'run', 'meditate', '瑜伽', 'yoga', '睡眠', 'sleep'];
+      case 'tag_learning':
+        return ['学习', 'learn', '读', 'read', '书', 'book', '课程', 'course', '研究', 'study', '知识', 'knowledge'];
+      case 'tag_insight':
+        return ['领悟', 'insight', '感悟', '反思', '思考', '启发', 'reflect', 'think', 'realize'];
+      case 'tag_gratitude':
+        return ['感恩', 'gratitude', '感谢', '谢谢', 'thank', 'appreciate', '感激'];
+      case 'tag_daily':
+        return ['日常', 'daily', '今天', 'today', '每天', 'everyday', '早上', 'morning', '晚上', 'evening'];
+      case 'tag_private':
+        return ['私密', 'private', '秘密', 'secret', '个人', 'personal'];
+      default:
+        return [tag.name.toLowerCase(), tag.nameEn.toLowerCase()];
+    }
   }
 
   void _switchFormat(EntryFormat newFormat) {
@@ -226,12 +280,11 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
   }
 
   Future<void> _saveEntry() async {
-    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
+    final l = AppLocalizations.of(context)!;
     final isList = _selectedFormat == EntryFormat.list;
 
     if (isList) {
       if (_listItems.isEmpty) {
-        final l = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.listSaveDisabledHint)),
         );
@@ -240,7 +293,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     } else {
       if (_textController.text.trim().isEmpty && _mediaItems.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isZh ? '请添加一些内容' : 'Please add some content')),
+          SnackBar(content: Text(l.addContentRequired)),
         );
         return;
       }
@@ -314,8 +367,8 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(widget.existingEntry != null
-                ? (isZh ? '记录已更新！' : 'Memory updated!')
-                : (isZh ? '记录已保存！' : 'Memory saved!'))),
+                ? l.memoryUpdated
+                : l.memorySaved)),
       );
       Navigator.pop(context);
     }
@@ -343,9 +396,9 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
       appBar: AppBar(
         title: Text(widget.existingEntry != null
             ? (_isPastEntry
-                ? (isZh ? '查看记录' : 'View Memory')
-                : (isZh ? '编辑记录' : 'Edit Memory'))
-            : (isZh ? '添加记录' : 'Add Memory')),
+                ? l.viewMemory
+                : l.editMemory)
+            : l.addMemory),
         actions: [
           if (!_isPastEntry)
             Semantics(
@@ -377,12 +430,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
                 ),
               ),
             if (!_isPastEntry) const SizedBox(height: 16),
-            if (isList) ..._buildListMode(context, isZh, l) else ..._buildNoteMode(context, isZh),
+            if (isList) ..._buildListMode(l) else ..._buildNoteMode(l),
             if (!_isPastEntry) ...[
               const SizedBox(height: 16),
-              _buildTagSection(context, isZh),
+              _buildTagSection(l),
               const SizedBox(height: 16),
-              ..._buildSharedSections(context, isZh, l),
+              ..._buildSharedSections(l),
             ],
           ],
         ),
@@ -390,7 +443,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     );
   }
 
-  List<Widget> _buildNoteMode(BuildContext context, bool isZh) {
+  List<Widget> _buildNoteMode(AppLocalizations l) {
     return [
       MergeSemantics(child: Semantics(
         identifier: 'input_entry_body',
@@ -400,7 +453,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
           readOnly: _isPastEntry,
           maxLines: 6,
           decoration: InputDecoration(
-            hintText: isZh ? '今天有什么想记录的？' : 'What\'s on your mind?',
+            hintText: l.addContentPrompt,
           filled: true,
           fillColor: Theme.of(context)
               .colorScheme
@@ -426,7 +479,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     ];
   }
 
-  List<Widget> _buildListMode(BuildContext context, bool isZh, AppLocalizations l) {
+  List<Widget> _buildListMode(AppLocalizations l) {
     return [
       TextField(
         controller: _titleController,
@@ -588,12 +641,12 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     ];
   }
 
-  List<Widget> _buildSharedSections(BuildContext context, bool isZh, AppLocalizations l) {
+  List<Widget> _buildSharedSections(AppLocalizations l) {
     return [
       const SizedBox(height: 16),
       if (_mediaItems.isNotEmpty) ...[
         Text(
-          isZh ? '媒体' : 'Media',
+          l.media,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -614,7 +667,7 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
         const SizedBox(height: 16),
       ],
       Text(
-        isZh ? '心情' : 'Mood',
+        l.mood,
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
       const SizedBox(height: 8),
@@ -673,20 +726,21 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
     ];
   }
 
-  Widget _buildTagSection(BuildContext context, bool isZh) {
+  Widget _buildTagSection(AppLocalizations l) {
+    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              isZh ? '标签' : 'Tags',
+              l.tags,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.edit_outlined, size: 18),
-              tooltip: isZh ? '管理标签' : 'Manage Tags',
+              tooltip: l.manageTags,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -698,10 +752,42 @@ class _AddEntryScreenState extends State<AddEntryScreen> {
             ),
           ],
         ),
+        if (_suggestedTagIds.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            isZh ? '建议标签' : 'Suggested',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          Consumer<TagProvider>(
+            builder: (context, tagProvider, child) {
+              final suggested = tagProvider.tags.where((t) => _suggestedTagIds.contains(t.id));
+              return Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: suggested.map((tag) {
+                  final isSelected = _selectedTagIds.contains(tag.id);
+                  final colorValue = int.parse(tag.color.substring(1), radix: 16) + 0xFF000000;
+                  return FilterChip(
+                    label: Text(tag.displayName(isZh), style: const TextStyle(fontSize: 12)),
+                    selected: isSelected,
+                    onSelected: (_) => _toggleTag(tag.id),
+                    backgroundColor: Color(colorValue).withValues(alpha: 0.1),
+                    selectedColor: Color(colorValue).withValues(alpha: 0.3),
+                    avatar: const Icon(Icons.auto_awesome, size: 14, color: Colors.amber),
+                    visualDensity: VisualDensity.compact,
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+        ],
         const SizedBox(height: 8),
         Consumer<TagProvider>(
           builder: (context, tagProvider, child) {
-            final tags = tagProvider.tags.where((t) => t.id != '');
+            final tags = tagProvider.tags.where((t) => t.id != '' && !_suggestedTagIds.contains(t.id));
             return Wrap(
               spacing: 8,
               runSpacing: 8,

@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/models.dart';
 
 class DatabaseService {
-  static const int kSchemaVersion = 16;
+  static const int kSchemaVersion = 17;
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
@@ -18,7 +18,7 @@ class DatabaseService {
   /// Returns the raw Database so tests can inspect indexes.
   @visibleForTesting
   static Future<Database> createTestDatabase(String path, {int? version}) async {
-    final targetVersion = version ?? 15;
+    final targetVersion = version ?? kSchemaVersion;
     final db = await openDatabase(
       path,
       version: targetVersion,
@@ -30,11 +30,12 @@ class DatabaseService {
     return db;
   }
 
-  /// Test-only: runs the onUpgrade migration on [db] from [oldVersion].
+  /// Test-only: runs the onUpgrade migration on [db] from [oldVersion]
+  /// to the current [kSchemaVersion].
   @visibleForTesting
   static Future<void> runMigration(Database db, int oldVersion) async {
     final svc = DatabaseService._internal();
-    await svc._onUpgrade(db, oldVersion, 15);
+    await svc._onUpgrade(db, oldVersion, kSchemaVersion);
   }
 
   Future<Database> get database async {
@@ -273,6 +274,24 @@ class DatabaseService {
       await db.execute("UPDATE templates SET background_image_path='assets/cards/bg_seal.jpg', text_padding_top=200, text_padding_left=120, text_padding_right=120, base_font_size=62, font_weight_value=700, text_align_mode='center' WHERE id='tpl_seal' AND is_built_in=1");
       await db.execute("UPDATE templates SET background_image_path='assets/cards/bg_landscape.jpg', text_padding_top=200, text_padding_left=140, text_padding_right=140, base_font_size=54, font_weight_value=500, text_align_mode='center', text_backdrop_color=NULL WHERE id='tpl_landscape' AND is_built_in=1");
     }
+    if (oldVersion < 17) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tag_categories (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          name_en TEXT,
+          color TEXT NOT NULL,
+          icon TEXT NOT NULL DEFAULT '📁',
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL
+        )
+      ''');
+      final columns = await db.rawQuery("PRAGMA table_info('tags')");
+      final colNames = columns.map((c) => c['name'] as String).toList();
+      if (!colNames.contains('category_id')) {
+        await db.execute('ALTER TABLE tags ADD COLUMN category_id TEXT');
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -301,9 +320,25 @@ class DatabaseService {
         name_en TEXT,
         color TEXT NOT NULL,
         category TEXT,
+        ${version >= 17 ? 'category_id TEXT,' : ''}
         created_at TEXT NOT NULL
       )
     ''');
+
+    // Tag Categories table (v17+)
+    if (version >= 17) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tag_categories (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          name_en TEXT,
+          color TEXT NOT NULL,
+          icon TEXT NOT NULL DEFAULT '📁',
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL
+        )
+      ''');
+    }
 
     // Entry Tags (Many-to-Many)
     await db.execute('''

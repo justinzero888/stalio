@@ -1,0 +1,39 @@
+# Maestro Flow — Phase 4: Tag Auto-Suggest
+# Validates tag suggestions appear when typing keywords in Add Entry
+# Run: maestro test test/maestro/phase4_tag_autosuggest.yaml
+#
+# Pre-requisite: Default tags must exist (seed data)
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SUGG-01: Add Entry screen opens
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "+"
+- assertVisible
+- takeScreenshot: screenshots/p4_sugg_01_add_entry
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SUGG-02: Type keyword triggers suggested tags
+# ---------------------------------------------------------------------------
+- tapOn: ".*"
+    index: 0
+- inputText: "family"
+- takeScreenshot: screenshots/p4_sugg_02_keyword
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SUGG-03: Suggested section appears with sparkle icon
+# ---------------------------------------------------------------------------
+- scroll
+- takeScreenshot: screenshots/p4_sugg_03_scrolled
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-SUGG-04: Return to My Day without saving
+# ---------------------------------------------------------------------------
+- back
+- assertVisible: "My Day"
+- takeScreenshot: screenshots/p4_sugg_04_myday

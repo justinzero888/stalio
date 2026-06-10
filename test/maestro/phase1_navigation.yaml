@@ -1,0 +1,63 @@
+# Maestro Flow — Phase 1: Navigation & Screen Rendering
+# Validates 5-tab bottom nav, screen rendering, no crashes
+# Run: maestro test test/maestro/phase1_navigation.yaml
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-NAV-01: App launches and shows My Day screen
+# ---------------------------------------------------------------------------
+- launchApp
+- assertVisible: "My Day"
+- takeScreenshot: screenshots/p1_nav_01_mytab
+
+---
+# ---------------------------------------------------------------------------
+# TC-NAV-02: Navigate to Tallies tab
+# ---------------------------------------------------------------------------
+- tapOn: "Tallies"
+- assertVisible
+- takeScreenshot: screenshots/p1_nav_02_tallies
+
+---
+# ---------------------------------------------------------------------------
+# TC-NAV-03: Navigate to Notes tab
+# ---------------------------------------------------------------------------
+- tapOn: "Notes"
+- assertVisible
+- takeScreenshot: screenshots/p1_nav_03_notes
+
+---
+# ---------------------------------------------------------------------------
+# TC-NAV-04: Navigate to Settings tab
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- assertVisible
+- takeScreenshot: screenshots/p1_nav_04_settings
+
+---
+# ---------------------------------------------------------------------------
+# TC-NAV-05: Return to My Day tab
+# ---------------------------------------------------------------------------
+- tapOn: "My Day"
+- assertVisible: "My Day"
+- takeScreenshot: screenshots/p1_nav_05_myday_return
+
+---
+# ---------------------------------------------------------------------------
+# TC-NAV-06: Center + button opens add entry screen
+# ---------------------------------------------------------------------------
+- tapOn: "+"
+- assertVisible
+- takeScreenshot: screenshots/p1_nav_06_add_entry
+- back
+
+---
+# ---------------------------------------------------------------------------
+# TC-NAV-07: Navigate all tabs in sequence (no crash)
+# ---------------------------------------------------------------------------
+- tapOn: "Tallies"
+- tapOn: "Notes"
+- tapOn: "Settings"
+- tapOn: "My Day"
+- takeScreenshot: screenshots/p1_nav_07_roundtrip

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path_pkg;
 import 'package:path_provider/path_provider.dart';
 import '../../models/entry.dart';
 import '../../models/tag.dart';
+import '../../models/tag_category.dart';
 import '../../models/routine.dart';
 import 'database_service.dart';
 
@@ -272,6 +273,7 @@ class StorageService {
       final map = Map<String, dynamic>.from(m);
       map['createdAt'] = m['created_at'];
       map['nameEn'] = m['name_en'];
+      map['categoryId'] = m['category_id'];
       return Tag.fromJson(map);
     }).toList();
   }
@@ -290,6 +292,7 @@ class StorageService {
       'name_en': tag.nameEn,
       'color': tag.color,
       'category': tag.category,
+      'category_id': tag.categoryId,
       'created_at': tag.createdAt.toIso8601String(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
@@ -301,12 +304,116 @@ class StorageService {
       'name_en': tag.nameEn,
       'color': tag.color,
       'category': tag.category,
+      'category_id': tag.categoryId,
     }, where: 'id = ?', whereArgs: [tag.id]);
   }
 
   Future<void> deleteTag(String id) async {
     final db = await _dbService.database;
     await db.delete('tags', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> reassignEntryTags(String fromTagId, String toTagId) async {
+    final db = await _dbService.database;
+    await db.transaction((txn) async {
+      final rows = await txn.query('entry_tags', where: 'tag_id = ?', whereArgs: [fromTagId]);
+      for (final row in rows) {
+        final entryId = row['entry_id'] as String;
+        final existing = await txn.query('entry_tags',
+            where: 'entry_id = ? AND tag_id = ?', whereArgs: [entryId, toTagId]);
+        if (existing.isEmpty) {
+          await txn.insert('entry_tags', {
+            'entry_id': entryId,
+            'tag_id': toTagId,
+          });
+        }
+      }
+      await txn.delete('entry_tags', where: 'tag_id = ?', whereArgs: [fromTagId]);
+    });
+  }
+
+  Future<void> deleteTagsByIds(List<String> ids) async {
+    final db = await _dbService.database;
+    for (final id in ids) {
+      await db.delete('tags', where: 'id = ?', whereArgs: [id]);
+    }
+  }
+
+  // ============ TAG CATEGORIES ============
+
+  Future<List<TagCategory>> getTagCategories() async {
+    final db = await _dbService.database;
+    final List<Map<String, dynamic>> maps = await db.query('tag_categories', orderBy: 'sort_order ASC, name ASC');
+    return maps.map((m) {
+      final map = Map<String, dynamic>.from(m);
+      map['nameEn'] = m['name_en'];
+      map['sortOrder'] = m['sort_order'];
+      map['createdAt'] = m['created_at'];
+      return TagCategory.fromJson(map);
+    }).toList();
+  }
+
+  Future<void> addTagCategory(TagCategory category) async {
+    final db = await _dbService.database;
+    await db.insert('tag_categories', {
+      'id': category.id,
+      'name': category.name,
+      'name_en': category.nameEn,
+      'color': category.color,
+      'icon': category.icon,
+      'sort_order': category.sortOrder,
+      'created_at': category.createdAt.toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> updateTagCategory(TagCategory category) async {
+    final db = await _dbService.database;
+    await db.update('tag_categories', {
+      'name': category.name,
+      'name_en': category.nameEn,
+      'color': category.color,
+      'icon': category.icon,
+      'sort_order': category.sortOrder,
+    }, where: 'id = ?', whereArgs: [category.id]);
+  }
+
+  Future<void> deleteTagCategory(String id) async {
+    final db = await _dbService.database;
+    await db.delete('tag_categories', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> getTagCategoryUsageCount(String categoryId) async {
+    final db = await _dbService.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as cnt FROM tags WHERE category_id = ?',
+      [categoryId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<List<Tag>> getTagsByCategoryId(String categoryId) async {
+    final db = await _dbService.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tags',
+      where: 'category_id = ?',
+      whereArgs: [categoryId],
+    );
+    return maps.map((m) {
+      final map = Map<String, dynamic>.from(m);
+      map['createdAt'] = m['created_at'];
+      map['nameEn'] = m['name_en'];
+      map['categoryId'] = m['category_id'];
+      return Tag.fromJson(map);
+    }).toList();
+  }
+
+  Future<void> reorderTagCategories(List<TagCategory> categories) async {
+    final db = await _dbService.database;
+    final batch = db.batch();
+    for (int i = 0; i < categories.length; i++) {
+      batch.update('tag_categories', {'sort_order': i}, where: 'id = ?', whereArgs: [categories[i].id]);
+    }
+    await batch.commit(noResult: true);
   }
 
   // ============ ROUTINES ============

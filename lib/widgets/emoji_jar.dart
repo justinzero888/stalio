@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/jar_provider.dart';
-import '../providers/locale_provider.dart';
 import '../providers/entry_provider.dart';
+import '../l10n/app_localizations.dart';
 
 /// A stylised glass jar widget showing emotions as emoji.
 ///
@@ -35,7 +35,7 @@ class EmojiJarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
+    final l = AppLocalizations.of(context)!;
     final entryCount = context.watch<EntryProvider>().allEntries.length;
     final emotions = emotionsOverride ??
         context.watch<JarProvider>().getDayEmotions(date);
@@ -69,7 +69,7 @@ class EmojiJarWidget extends StatelessWidget {
                     child: visible.isEmpty
                         ? Center(
                             child: Text(
-                              isZh ? '空' : 'empty',
+                              l.emojiJarEmpty,
                               style: TextStyle(
                                 color: Colors.grey[400],
                                 fontSize: size * 0.18,

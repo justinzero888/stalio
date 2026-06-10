@@ -41,6 +41,7 @@ class TagProvider extends ChangeNotifier {
     required String nameEn,
     required String color,
     String category = 'custom',
+    String? categoryId,
   }) async {
     _error = null;
     
@@ -50,6 +51,7 @@ class TagProvider extends ChangeNotifier {
         nameEn: nameEn,
         color: color,
         category: category,
+        categoryId: categoryId,
       );
       _tags.add(tag);
       _tags.sort((a, b) => a.name.compareTo(b.name));
@@ -104,6 +106,19 @@ class TagProvider extends ChangeNotifier {
   /// Get tags by IDs (batch lookup)
   List<Tag> getTagsByIds(List<String> ids) {
     return _tags.where((t) => ids.contains(t.id)).toList();
+  }
+
+  /// Merge source tags into target and reload.
+  Future<void> mergeTags(String targetTagId, List<String> sourceTagIds) async {
+    _error = null;
+    try {
+      await _repository.mergeTags(targetTagId, sourceTagIds);
+      _tags.removeWhere((t) => sourceTagIds.contains(t.id));
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
   }
 
   /// Search tags

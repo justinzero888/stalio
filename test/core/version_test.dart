@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:micro_habits/core/config/constants.dart';
+import 'package:stalio/core/config/constants.dart';
 
 void main() {
   group('App version consistency', () {
@@ -32,8 +32,8 @@ void main() {
       expect(AppConstants.appVersion, isNotEmpty);
     });
 
-    test('AppConstants.appName is Blinking', () {
-      expect(AppConstants.appName, 'Blinking');
+    test('AppConstants.appName is Stalio', () {
+      expect(AppConstants.appName, 'Stalio');
     });
   });
 }

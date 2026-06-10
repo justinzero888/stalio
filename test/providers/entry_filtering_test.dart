@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:micro_habits/models/entry.dart';
+import 'package:stalio/models/entry.dart';
 
 void main() {
   group('Entry Filtering', () {

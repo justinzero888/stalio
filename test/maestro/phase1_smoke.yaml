@@ -1,0 +1,72 @@
+# Maestro Flow — Phase 1: Visual Smoke Test
+# Full-screen visual validation across all tabs
+# Run: maestro test test/maestro/phase1_smoke.yaml
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-01: Cold launch → My Day renders
+# ---------------------------------------------------------------------------
+- launchApp:
+    clearState: true
+- assertVisible: "My Day"
+- takeScreenshot: screenshots/p1_smoke_01_cold_launch
+
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-02: Tallies screen renders (streak matrix, charts)
+# ---------------------------------------------------------------------------
+- tapOn: "Tallies"
+- assertVisible
+- takeScreenshot: screenshots/p1_smoke_02_tallies
+
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-03: Notes screen renders (entry list)
+# ---------------------------------------------------------------------------
+- tapOn: "Notes"
+- assertVisible
+- takeScreenshot: screenshots/p1_smoke_03_notes
+
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-04: Settings → General tab renders
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- assertVisible
+- takeScreenshot: screenshots/p1_smoke_04_settings_general
+
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-05: Settings → Tags tab renders
+# ---------------------------------------------------------------------------
+- tapOn: "Tags"
+- assertVisible
+- takeScreenshot: screenshots/p1_smoke_05_settings_tags
+
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-06: Settings → Habit Build tab renders
+# ---------------------------------------------------------------------------
+- tapOn: "Habit Build"
+- assertVisible
+- takeScreenshot: screenshots/p1_smoke_06_settings_habits
+
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-07: Language toggle Settings → Language
+# ---------------------------------------------------------------------------
+- tapOn: "General"
+- scroll
+- tapOn:
+    text: "中文"
+    optional: true
+- takeScreenshot: screenshots/p1_smoke_07_lang_toggle
+
+---
+# ---------------------------------------------------------------------------
+# TC-SMOKE-08: Settings → About shows version Stalio not Blinking
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- scroll
+- takeScreenshot: screenshots/p1_smoke_08_about_version

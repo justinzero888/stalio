@@ -1,0 +1,44 @@
+# Maestro Flow — Phase 4: Tag Analytics in Tallies
+# Validates 4th Tags tab in Tallies with charts
+# Run: maestro test test/maestro/phase4_tag_analytics.yaml
+#
+# Pre-requisite: Entries with tags must exist (seed data)
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P4-ANAL-01: Tallies screen renders with Tags tab
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "Tallies"
+- assertVisible
+- takeScreenshot: screenshots/p4_anal_01_tallies
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-ANAL-02: Tags tab visible in Tallies
+# ---------------------------------------------------------------------------
+- tapOn: "Tags"
+- assertVisible
+- takeScreenshot: screenshots/p4_anal_02_tags_tab
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-ANAL-03: Top Tags chart section renders
+# ---------------------------------------------------------------------------
+- scroll
+- takeScreenshot: screenshots/p4_anal_03_charts
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-ANAL-04: Navigate to other Tallies tabs and back
+# ---------------------------------------------------------------------------
+- tapOn: "Habits"
+- assertVisible
+- tapOn: "Notes"
+- assertVisible
+- tapOn: "Moods"
+- assertVisible
+- tapOn: "Tags"
+- assertVisible
+- takeScreenshot: screenshots/p4_anal_04_all_tabs

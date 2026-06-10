@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:micro_habits/core/services/export_service.dart';
-import 'package:micro_habits/core/services/storage_service.dart';
-import 'package:micro_habits/models/entry.dart' show Entry, EntryType;
-import 'package:micro_habits/models/tag.dart';
-import 'package:micro_habits/models/routine.dart';
+import 'package:stalio/core/services/export_service.dart';
+import 'package:stalio/core/services/storage_service.dart';
+import 'package:stalio/models/entry.dart' show Entry, EntryType;
+import 'package:stalio/models/tag.dart';
+import 'package:stalio/models/routine.dart';
 
 class _FakeStorage extends StorageService {
   final List<Entry> _entries;
@@ -124,115 +124,6 @@ void main() {
           reason: 'recent entry media should be included');
       expect(filesInZip, isNot(contains('media/old_photo.jpg')),
           reason: 'old entry media should be excluded when outside date range');
-    });
-  });
-
-  group('ExportService.exportAll — persona', () {
-    late Directory tempDir;
-
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-      tempDir = Directory.systemTemp.createTempSync('export_persona_test_');
-    });
-
-    tearDown(() {
-      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
-    });
-
-    test('persona.json included when AI name is set', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ai_assistant_name', '小悟');
-      await prefs.setString('ai_assistant_personality', 'calm and logical');
-
-      final service = ExportService(_FakeStorage());
-      final zipPath = await service.exportAll(docDirOverride: tempDir.path);
-
-      final bytes = File(zipPath).readAsBytesSync();
-      final archive = ZipDecoder().decodeBytes(bytes);
-      final files = archive.map((f) => f.name).toList();
-
-      expect(files, contains('persona.json'));
-
-      final personaFile = archive.findFile('persona.json')!;
-      final personaData =
-          json.decode(utf8.decode(personaFile.content as List<int>)) as Map<String, dynamic>;
-      expect(personaData['ai_assistant_name'], '小悟');
-      expect(personaData['ai_assistant_personality'], 'calm and logical');
-    });
-
-    test('persona.json not included when persona is unset', () async {
-      final service = ExportService(_FakeStorage());
-      final zipPath = await service.exportAll(docDirOverride: tempDir.path);
-
-      final bytes = File(zipPath).readAsBytesSync();
-      final archive = ZipDecoder().decodeBytes(bytes);
-      final files = archive.map((f) => f.name).toList();
-
-      expect(files, isNot(contains('persona.json')));
-    });
-
-    test('avatar file included in ZIP when avatar path is set and file exists', () async {
-      final mediaDir = Directory('${tempDir.path}/media')..createSync();
-      final avatarFile = File('${mediaDir.path}/test_avatar.jpg')
-        ..writeAsBytesSync(List.filled(1024, 42));
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ai_assistant_name', '小悟');
-      await prefs.setString('ai_avatar_path', avatarFile.path);
-
-      final service = ExportService(_FakeStorage());
-      final zipPath = await service.exportAll(docDirOverride: tempDir.path);
-
-      final bytes = File(zipPath).readAsBytesSync();
-      final archive = ZipDecoder().decodeBytes(bytes);
-      final files = archive.map((f) => f.name).toList();
-
-      expect(files, contains('avatar/test_avatar.jpg'));
-
-      final personaFile = archive.findFile('persona.json')!;
-      final personaData =
-          json.decode(utf8.decode(personaFile.content as List<int>)) as Map<String, dynamic>;
-      expect(personaData['ai_avatar_zip_path'], 'avatar/test_avatar.jpg');
-    });
-
-    test('avatar not in ZIP when file is missing but pref exists', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ai_assistant_name', '小悟');
-      await prefs.setString('ai_avatar_path', '/nonexistent/avatar.jpg');
-
-      final service = ExportService(_FakeStorage());
-      final zipPath = await service.exportAll(docDirOverride: tempDir.path);
-
-      final bytes = File(zipPath).readAsBytesSync();
-      final archive = ZipDecoder().decodeBytes(bytes);
-      final files = archive.map((f) => f.name).toList();
-
-      expect(files, isNot(contains(startsWith('avatar/'))));
-      // persona.json still present (name is set)
-      expect(files, contains('persona.json'));
-    });
-
-    test('excludeMedia does not exclude persona or avatar', () async {
-      final mediaDir = Directory('${tempDir.path}/media')..createSync();
-      final avatarFile = File('${mediaDir.path}/avatar.jpg')
-        ..writeAsBytesSync(List.filled(512, 7));
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ai_assistant_name', 'Test');
-      await prefs.setString('ai_avatar_path', avatarFile.path);
-
-      final service = ExportService(_FakeStorage());
-      final zipPath = await service.exportAll(
-        excludeMedia: true,
-        docDirOverride: tempDir.path,
-      );
-
-      final bytes = File(zipPath).readAsBytesSync();
-      final archive = ZipDecoder().decodeBytes(bytes);
-      final files = archive.map((f) => f.name).toList();
-
-      expect(files, contains('persona.json'));
-      expect(files, contains('avatar/avatar.jpg'));
     });
   });
 }

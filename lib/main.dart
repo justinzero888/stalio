@@ -17,5 +17,5 @@ void main() async {
 
   await NotificationService.init();
 
-  runApp(BlinkingApp(storageService: storageService));
+  runApp(StalioApp(storageService: storageService));
 }

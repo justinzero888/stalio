@@ -1,115 +1,95 @@
-# Session Summary — May 30, 2026
+# Session Summary — June 2, 2026
 
 ## What Was Built
 
-Forked Blinking Notes v1.2.0 into **Stalio** — a clean habit/note tracking app.
+### Phase 1: Foundation & Branding (Complete — PM Signed Off)
+- Test suite rebuilt: removed AI/card system tests, migrated `micro_habits → stalio` imports, 166 tests pass
+- Color schema: green/teal (#2A9D8F) → navy (#10317D) + gold (#E0B84F) across all screens and platform configs
+- Dark theme fully defined with gold accents, light theme with warm off-white scaffold
+- Legal content: all "Blinking"/"记忆闪烁"/"Pro"/"AI" references removed from English + Chinese versions
+- App icon: navy background + gold tally mark, adaptive icon with transparent foreground, no inset clipping
+- App title changed from 'Blinking' to 'Stalio', themeMode wired to ThemeProvider
 
-### Core Development
-- Removed AI, IAP, cards, onboarding, Chorus, voice transcribe, photo picker
-- Restored emoji jar with glass mason jar design (CustomPainter)
-- Built 3-tab Tallies page (Habits/Notes/Moods) with streak matrix heatmap
-- Redesigned Habits page as single scrollable view (today checklist + streak matrix)
-- Settings split into 3 tabs: General (voice, language, backup, T&C), Tags (CRUD), Habit Build
-- 5-tab bottom nav: My Day, Tallies, +, Notes, Settings
-- Center + button: navy (#1A2533) square with golden plus, stationed (not FAB)
-- Renamed app from Micro Habits → Stalio (all platforms including iOS plist)
+### Phase 2: Core Features (Complete — Awaiting PM Sign-off)
+- Backup/Restore UI wired: "Full Backup (ZIP)" → ExportService.exportAll() → share_plus; "Restore Data" → FilePicker → confirmation dialog → StorageService.restoreFromBackup(); progress indicators, error handling, gold success snackbar
+- Performance: FlutterTts made lazy (was eager static field), TTS init deferred until voice notification triggers
+- 232 tests pass (166 Phase 1 + 13 Phase 2 widget/integration + 53 smoke/utility)
 
-### UX Polish
-- Sub-stat cards height capped at 110px (`SizedBox`) to prevent iPad/landscape overflow
-- SectionCard titles wrapped in `Expanded` to prevent text overflow
-- TagMoodSection crash fixed with `orElse` fallback for empty tags
-- Voice notification timing fixed from 2-min window to 50s after scheduled time
-- Background notifications confirmed working via `zonedSchedule`
-- Seed data: 8 entries with tags/emotions, 31 habits (3 active), default tags
-- App icon updated across iOS and Android (foreground + adaptive)
-- Emoji jar label count fixed to show emoji count not note count
+### Color Polish (During Phase 2)
+- Habit check icons: all green replaced with gold (#E0B84F) across home_screen.dart, routine_screen.dart, calendar_widget.dart
+- Filter chips (All/Today/This week/Tags): selected state now navy background + gold text + gold checkmark — explicit color on FilterChip widget (Material3 secondaryLabelStyle doesn't apply)
+- Habit Check-in section header: system emoji "✅" replaced with Flutter Icon(check_circle, gold)
+- One remaining green: language checkmark in settings (intentional, semantic/functional)
 
-### Note Card Changes
-- My Day: share icon removed, replaced with tag count icon
-- Notes tab: tag chips shown below timestamp instead of count icon
+## Project Status
 
-## Files to Handle Carefully
-- `cherished_memory_screen.dart` (1561 lines) — do NOT use edit tool. Use `sed` for line-level changes
-- `routine_screen.dart` — complex single-view layout
-- `app.dart` — nav index mapping (4 nav items → 3 screens + center button)
+| Phase | Status | Tests | Test Files |
+|---|---|---|---|
+| 1: Foundation & Branding | Signed off | 166 | 24 |
+| 2: Core Features | Awaiting PM sign-off | 13 (+1 manual) | 3 |
+| 3: UX & Localization | Not started | — | — |
+| 4: Feature Expansion | Not started | — | — |
+| 5: Monetization | Blocked (external setup) | — | — |
+| 6: Polish & Delight | Not started | — | — |
+| **Total** | | **232 passing** | **27 files** |
 
-## Lessons Learned
+## Files Created/Modified
 
-### Edit Tool Pitfalls
-- **Never use the edit tool on `cherished_memory_screen.dart`** — the file has many repeating patterns (`);\n  }\n}`) that cause the edit tool's `replaceAll` to match the wrong location. Four consecutive attempts to edit this file resulted in corruption (1000+ lines deleted). Use `sed` for precise line-level changes.
-- **The edit tool's default behavior is `replaceAll: false`** — but `.` doesn't mean `replaceAll` is off. In at least one case, an edit that should have been a single replacement silently affected multiple locations.
-- **Always `git checkout` the last known good version before making edits** on fragile files. Keep `safe-rollback` tag updated after every successful change.
-- **Verify file line count after each edit** (`wc -l`) as a sanity check. The file going from 1607 → 536 lines is an immediate red flag.
+### Phase 1
+- `lib/core/config/theme.dart` — navy + gold colors, dark theme completion
+- `lib/app.dart` — title 'Stalio', themeMode wired
+- `lib/core/constants/legal_content.dart` — all Blinking/AI/Pro/Chorus references removed
+- `lib/screens/cherished/cherished_memory_screen.dart` — navy colors (sed)
+- `lib/screens/routine/routine_screen.dart` — teal → navy/gold (sed)
+- `lib/screens/home/home_screen.dart` — green → gold
+- `lib/widgets/calendar_widget.dart` — teal → navy, green → gold
+- `android/app/src/main/res/values/colors.xml` — #0D3B34 → #10317D
+- `ios/Runner/Base.lproj/LaunchScreen.storyboard` — navy background
+- `assets/icons/app_icon.png` — new icon from stalio_icon_1.png
+- `pubspec.yaml` — adaptive_icon_background #10317D
+- `test/core/db_index_test.dart` — card system index tests removed
+- `test/core/export_service_progress_test.dart` — AI persona tests removed
+- `test/core/storage_service_restore_test.dart` — AI persona + duplicates removed
+- `test/core/version_test.dart` — appName → 'Stalio'
+- All test files — `micro_habits → stalio` import rename
 
-### Code Organization
-- **Large classes in the same Dart file** (30+ classes in `cherished_memory_screen.dart`) create fragile dependencies. Future refactoring should split these into separate files.
-- **Private classes** (`_HabitsTab`, `_MiniStatCard`) prevent code reuse across files. Consider making shared widgets public when used in multiple contexts.
+### Phase 2
+- `lib/screens/settings/settings_screen.dart` — backup/restore UI wired, share_plus + file_picker imports
+- `lib/core/services/voice_notification_service.dart` — lazy TTS init
+- `lib/core/services/storage_service.dart` — reverted to individual transactions (batched tx caused DB lock)
+- `test/screens/backup_restore_screen_test.dart` — 6 widget tests (new)
+- `test/integration/phase2_backup_roundtrip_test.dart` — 4 integration tests (new)
+- `test/integration/phase2_restore_errors_test.dart` — 3 integration tests (new)
+- `test/screens/home_screen_test.dart` — updated for section header check_circle
 
-### Navigation Complexity
-- **The `_navIndex` → `_screenIndex` mapping** is error-prone. The bottom nav has 5 items but only 3 screens (center + doesn't map to a screen). Future changes to tab count require updating `_navToScreen` mapping, `_onTabTapped`, and the screen list in `initState`.
-
-### Seed Data
-- **Always add a SharedPreferences guard** for seed data to prevent duplicate creation on subsequent launches.
-- **Use stable IDs** (`seed_entry_1`, etc.) rather than UUIDs for seed entries to avoid duplicate detection issues.
-
-## What's Next for New Dev Team
-
-### Priority
-1. **Test suite rebuild** — all tests reference deleted features, need fresh tests for current codebase
-2. **Backup/Restore** — UI exists but implementation is placeholder
-3. **Performance** — first launch takes ~5s on Android due to seed data + TTS init
-
-### Color Schema Update
-4. **Replace green/white palette with navy blue + gold** — the app currently inherits Blinking's green (#0D3B34 seed color, emerald accents). Replace with navy (#1A2533) and gold (#FFD700) throughout:
-   - Theme seed color in `app.dart` MaterialApp
-   - All card/section accent colors
-   - Streak matrix completion cells
-   - Habit completion indicators
-   - Progress bars and chart colors
-   - Android adaptive icon background
-   - iOS launch screen background
-
-### Legal Content
-5. **Update Privacy Policy and Terms of Service** — currently still Blinking's legal text in `legal_content.dart`. Must be rewritten to:
-   - Replace all "Blinking" references with "Stalio"
-   - Remove AI/data processing clauses (LLM, personalization)
-   - Remove IAP/subscription terms
-   - Remove Chorus/social sharing clauses
-   - Update data collection scope (no AI, no accounts)
-   - Update contact email to Stalio address
-
-### Tag Management Redesign
-6. **Complete tag system overhaul** — current tags are flat (name + color). Requirements pending breakdown and design:
-   - **Add category concept** to tags for maximum flexibility across different note logging styles (e.g. work, personal, health, travel)
-   - Tag hierarchy or grouping: categories → tags
-   - Tag analytics: usage per category, co-occurrence patterns
-   - Bulk tag operations: assign category, merge tags, recolor
-   - Tag auto-suggest based on content and existing patterns
-   - UX: category filter in Notes tab, category colors, category-based insights
-
-### Language/Localization Audit
-7. **Thorough audit of all localizable strings** — identify and document gaps:
-   - Audit every screen for hardcoded strings vs l10n keys
-   - Currently mixed: some screens use `isZh ? '中文' : 'English'`, others use `l10n.xxx`
-   - Missing localization surfaces: streak matrix labels, summary card labels, chart tooltips, seed entry content, background notification body text
-   - Decision needed: keep current inline `isZh` pattern or migrate to full `AppLocalizations` delegate
-
-### Notes Share Redesign
-8. **Redesign notes sharing** — current share was removed (was single-note plain text). New design:
-   - Multi-select notes for batch sharing
-   - Format options before export: plain text, markdown, formatted with tags/emotions/dates
-   - Preview before share
-   - Selection UI: checkboxes on note cards, select-all, range selection
-   - Share target: system share sheet, copy to clipboard, save as file
-
-### Additional
-9. **Habit image customization** — photo per habit
-10. **Dark mode polish** — theme completeness audit
-11. **Streak celebration animations** — milestone celebrations
-12. **Export to CSV/PDF** — actual implementation (currently placeholder)
-13. **iOS name cache** — needs fresh install to show "Stalio" on home screen (Info.plist is correct now, simulator caches old name)
+### Documents
+- `IMPLEMENTATION_PLAN.md` — 6-phase plan with test case tables per phase
+- `EXTERNAL_SETUP_GUIDE.md` — AdMob/Google Play/App Store Connect step-by-step
+- `docs/UAT_PHASE1.md` — 61 manual validation test cases
 
 ## Git
-- `safe-rollback` tag always points to last known good state
-- Version: 1.0.0+1 (dev, unreleased)
-- All three sims running with 0 analysis errors
+- No git repo initialized (project not under version control yet)
+- `flutter test`: 232 tests pass (166 P1 + 13 P2 + 53 smoke/utility)
+- All three sims running with latest code, zero analysis errors
+
+## What's Next
+
+### PM (Human)
+1. **Phase 2 sign-off** — validate backup/restore UI on sims, measure cold start time
+2. **External platform setup** (see `EXTERNAL_SETUP_GUIDE.md`) — start AdMob, Google Merchant, Apple Paid Apps accounts for Phase 5
+
+### Dev (Agent)
+1. **Phase 3: UX & Localization** (Week 3-4) — upon PM sign-off:
+   - L10n Audit: update ARB files (appName → 'Stalio'), replace all `isZh ?` patterns with `l10n.xxx`, add missing ARB keys
+   - Dark Mode Polish: full visual QA pass
+   - iOS Name Cache Fix: document clean build script
+   - 14 new tests to write
+2. **Phase 4: Feature Expansion** — Tag categories, CSV/PDF export, Notes share redesign
+3. **Phase 5: Monetization** — AdMob + Remove Ads IAP (blocked on external setup)
+4. **Phase 6: Polish & Delight** — Habit images, streak animations
+
+### Known Issues
+- Cold start ~2s (measured on Android emulator, TTS lazy init helped)
+- Onboarding transition_screen.dart still exists but dead code (navigates to deleted paywall)
+- RevenueCat purchases_service.dart still runs in background (logs but no crash) — will be deleted in Phase 5
+- Seed data batching blocked by sqflite transaction handle locking — needs deeper refactoring

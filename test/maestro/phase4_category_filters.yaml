@@ -1,0 +1,38 @@
+# Maestro Flow — Phase 4: Category Filter Chips
+# Validates category filter chips in Moments (Notes) tab
+# Run: maestro test test/maestro/phase4_category_filters.yaml
+#
+# Pre-requisite: Tag categories and entries must exist
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P4-FILT-01: Moments tab renders with category filter chips
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "Notes"
+- assertVisible
+- takeScreenshot: screenshots/p4_filt_01_notes
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-FILT-02: Date filter chips visible (All, Today, Week, Tags)
+# ---------------------------------------------------------------------------
+- assertVisible: "All"
+- assertVisible: "Today"
+- takeScreenshot: screenshots/p4_filt_02_date_chips
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-FILT-03: Scroll to reveal category filter row
+# ---------------------------------------------------------------------------
+- scroll
+- takeScreenshot: screenshots/p4_filt_03_category_row
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-FILT-04: Tap Category chip → entries filter
+# ---------------------------------------------------------------------------
+- tapOn: "All"
+    optional: true
+- takeScreenshot: screenshots/p4_filt_04_all_selected

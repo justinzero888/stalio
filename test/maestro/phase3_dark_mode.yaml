@@ -1,0 +1,97 @@
+# Maestro Flow — Phase 3: Dark Mode Visual Regression
+# Validates Light/Dark/System theme toggle, all screens render correctly in dark mode
+# Run: maestro test test/maestro/phase3_dark_mode.yaml
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-01: Fresh launch in light mode — My Day renders
+# ---------------------------------------------------------------------------
+- launchApp:
+    clearState: true
+- assertVisible: "My Day"
+- takeScreenshot: screenshots/p3_dark_01_light_launch
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-02: Settings → Theme section visible
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- scroll
+- assertVisible: "Theme"
+- takeScreenshot: screenshots/p3_dark_02_theme_present
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-03: Theme dialog shows all 3 options
+# ---------------------------------------------------------------------------
+- tapOn: "Theme"
+- assertVisible: "Light Mode"
+- assertVisible: "Dark Mode"
+- assertVisible: "System"
+- takeScreenshot: screenshots/p3_dark_03_theme_dialog
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-04: Select Dark Mode
+# ---------------------------------------------------------------------------
+- tapOn: "Dark Mode"
+- takeScreenshot: screenshots/p3_dark_04_dark_selected
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-05: My Day in dark mode
+# ---------------------------------------------------------------------------
+- tapOn: "My Day"
+- assertVisible
+- takeScreenshot: screenshots/p3_dark_05_dark_myday
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-06: Tallies in dark mode
+# ---------------------------------------------------------------------------
+- tapOn: "Tallies"
+- assertVisible
+- takeScreenshot: screenshots/p3_dark_06_dark_tallies
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-07: Notes in dark mode
+# ---------------------------------------------------------------------------
+- tapOn: "Notes"
+- assertVisible
+- takeScreenshot: screenshots/p3_dark_07_dark_notes
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-08: Settings in dark mode
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- assertVisible
+- takeScreenshot: screenshots/p3_dark_08_dark_settings
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-09: Switch to System theme
+# ---------------------------------------------------------------------------
+- scroll
+- tapOn: "Theme"
+- tapOn: "System"
+- takeScreenshot: screenshots/p3_dark_09_system_theme
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-10: Return to Light Mode
+# ---------------------------------------------------------------------------
+- tapOn: "Theme"
+- tapOn: "Light Mode"
+- assertVisible
+- takeScreenshot: screenshots/p3_dark_10_back_to_light
+
+---
+# ---------------------------------------------------------------------------
+# TC-DARK-11: Verify My Day renders in light mode after switch back
+# ---------------------------------------------------------------------------
+- tapOn: "My Day"
+- assertVisible: "My Day"
+- takeScreenshot: screenshots/p3_dark_11_light_restored

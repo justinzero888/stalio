@@ -1,0 +1,46 @@
+# Maestro Flow — Phase 4: Export CSV
+# Validates CSV export UI in Settings → General
+# Run: maestro test test/maestro/phase4_export_csv.yaml
+#
+# Pre-requisite: Phase 3 sign-off
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CSV-01: Settings → General shows Export CSV button
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "Settings"
+- assertVisible: "Export CSV"
+- takeScreenshot: screenshots/p4_csv_01_button
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CSV-02: Tap Export CSV opens date range picker
+# ---------------------------------------------------------------------------
+- scroll
+- tapOn: "Export CSV"
+- assertVisible: "Select Export Range"
+- assertVisible: "All time"
+- assertVisible: "Last 30 days"
+- assertVisible: "Last 90 days"
+- assertVisible: "Custom"
+- takeScreenshot: screenshots/p4_csv_02_range_picker
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CSV-03: Cancel returns to settings
+# ---------------------------------------------------------------------------
+- tapOn: "Cancel"
+- assertVisible: "Export CSV"
+- takeScreenshot: screenshots/p4_csv_03_cancelled
+
+---
+# ---------------------------------------------------------------------------
+# TC-P4-CSV-04: Select All time → progress + share sheet
+# ---------------------------------------------------------------------------
+- scroll
+- tapOn: "Export CSV"
+- tapOn: "All time"
+- assertVisible
+- takeScreenshot: screenshots/p4_csv_04_share

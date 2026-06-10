@@ -274,4 +274,10 @@ class EntryProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Test-only: seeds the entry list without touching storage.
+  @visibleForTesting
+  void loadEntriesForTest(List<Entry> entries) {
+    _entries = List.of(entries);
+  }
 }

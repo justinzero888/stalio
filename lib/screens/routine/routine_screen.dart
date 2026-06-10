@@ -11,6 +11,7 @@ import '../../providers/routine_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/entry_provider.dart';
 import '../../models/routine.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Renders a routine's icon: custom image if set, else emoji fallback.
 Widget _buildRoutineIcon(Routine routine, {double size = 20}) {
@@ -39,13 +40,13 @@ class RoutineScreenState extends State<RoutineScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
+    final l = AppLocalizations.of(context)!;
     final provider = context.watch<RoutineProvider>();
     final activeRoutines = provider.routines.where((r) => r.isActive).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isZh ? '习惯' : 'Habits'),
+        title: Text(l.habitsSectionTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -66,7 +67,7 @@ class RoutineScreenState extends State<RoutineScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isZh ? '连续记录' : 'Streak Matrix',
+                      l.streakMatrixTitle,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
                     ),
                     const SizedBox(height: 12),
@@ -94,6 +95,7 @@ class _SummaryCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     final activeHabits = provider.routines.where((r) => r.isActive).toList();
     int bestStreak = 0;
@@ -106,22 +108,22 @@ class _SummaryCards extends StatelessWidget {
         _StatCard(
           icon: Icons.checklist,
           value: '${provider.routines.length}',
-          label: isZh ? '总计' : 'Total',
+          label: l.totalHabits,
           color: Theme.of(context).colorScheme.primary,
         ),
         const SizedBox(width: 8),
         _StatCard(
           icon: Icons.local_fire_department,
           value: '$bestStreak${isZh ? "天" : "d"}',
-          label: isZh ? '最佳连续' : 'Best Streak',
+          label: l.bestStreak,
           color: Colors.amber.shade700,
         ),
         const SizedBox(width: 8),
         _StatCard(
           icon: Icons.play_circle,
           value: '${activeHabits.length}',
-          label: isZh ? '活跃' : 'Active',
-          color: Colors.green,
+          label: l.activeHabits,
+          color: const Color(0xFFE0B84F),
         ),
       ],
     );
@@ -163,9 +165,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// Tab 2 — 执行 / Do
-// ─────────────────────────────────────────────
 class _TodaySection extends StatefulWidget {
   final Set<String> manuallyAdded;
   final void Function(String id) onManualAdd;
@@ -229,13 +228,13 @@ class _TodaySectionState extends State<_TodaySection> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: left > 1 ? Colors.teal.withValues(alpha: 0.08) : Colors.orange.withValues(alpha: 0.08),
+          color: left > 1 ? const Color(0xFF10317D).withValues(alpha: 0.08) : Colors.orange.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
             Icon(Icons.info_outline, size: 16,
-                color: left > 1 ? Colors.teal[400] : Colors.orange[400]),
+                color: left > 1 ? const Color(0xFF10317D) : Colors.orange[400]),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -247,7 +246,7 @@ class _TodaySectionState extends State<_TodaySection> {
                         ? '${routine.displayName(isZh)} — 今天完成仍可保持连续记录'
                         : '${routine.displayName(isZh)} — still time to keep your streak'),
                 style: TextStyle(
-                  color: left > 1 ? Colors.teal[600] : Colors.orange[600],
+                  color: left > 1 ? const Color(0xFFE0B84F) : Colors.orange[600],
                   fontSize: 12,
                 ),
               ),
@@ -260,6 +259,7 @@ class _TodaySectionState extends State<_TodaySection> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     final provider = context.watch<RoutineProvider>();
     final theme = Theme.of(context);
@@ -269,7 +269,7 @@ class _TodaySectionState extends State<_TodaySection> {
     final adhocAdded = provider.adhocRoutines
         .where((r) => widget.manuallyAdded.contains(r.id))
         .toList();
-    // Deduplicate — a routine might appear in both lists
+    // Deduplicate
     final seen = <String>{};
     final allToday = <Routine>[];
     for (final r in [...scheduled, ...adhocAdded]) {
@@ -308,7 +308,7 @@ class _TodaySectionState extends State<_TodaySection> {
                     minHeight: 6,
                     backgroundColor: Colors.grey[200],
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      allDone ? Colors.green : theme.colorScheme.primary,
+                      allDone ? const Color(0xFFE0B84F) : theme.colorScheme.primary,
                     ),
                   ),
                 ),
@@ -316,10 +316,10 @@ class _TodaySectionState extends State<_TodaySection> {
               const SizedBox(width: 12),
               Text(
                 allDone
-                    ? '✓'
+                    ? '\u2713'
                     : '$done / $total',
                 style: TextStyle(
-                  color: allDone ? Colors.green : Colors.grey[600],
+                  color: allDone ? const Color(0xFFE0B84F) : Colors.grey[600],
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
                 ),
@@ -342,13 +342,13 @@ class _TodaySectionState extends State<_TodaySection> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              isZh ? '全部完成，做得漂亮。' : 'All done today. Well done.',
-              style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w500),
+              l.allHabitsDone,
+              style: const TextStyle(color: const Color(0xFFE0B84F), fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
         const SizedBox(height: 4),
 
-        // Grace reminders — note-earned extension
+        // Grace reminders
         if (!allDone) ...[
           for (final r in pending.where((r) => r.inGrace))
             _buildGraceBanner(context, r, isZh, theme),
@@ -364,13 +364,13 @@ class _TodaySectionState extends State<_TodaySection> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.teal.shade400, Colors.teal.shade600],
+                      colors: [const Color(0xFF10317D), const Color(0xFFE0B84F)],
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     children: [
-                      const Text('🔥', style: TextStyle(fontSize: 16)),
+                      const Text('\u{1F525}', style: TextStyle(fontSize: 16)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -395,7 +395,7 @@ class _TodaySectionState extends State<_TodaySection> {
           Row(
             children: [
               Text(
-                isZh ? '待完成' : 'Still to do',
+                l.notCompleted,
                 style: TextStyle(
                   color: theme.colorScheme.primary,
                   fontSize: 13,
@@ -433,7 +433,7 @@ class _TodaySectionState extends State<_TodaySection> {
         // Completed section
         if (completed.isNotEmpty) ...[
           Text(
-            isZh ? '已完成' : 'Done today',
+            l.completed,
             style: TextStyle(
               color: Colors.grey[400],
               fontSize: 13,
@@ -455,10 +455,10 @@ class _TodaySectionState extends State<_TodaySection> {
             padding: const EdgeInsets.symmetric(vertical: 32),
             child: Column(
               children: [
-                const Text('🌿', style: TextStyle(fontSize: 40)),
+                const Text('\u{1F33F}', style: TextStyle(fontSize: 40)),
                 const SizedBox(height: 12),
                 Text(
-                  isZh ? '今日无安排' : 'Nothing scheduled today',
+                  l.emptyStateRoutines,
                   style: TextStyle(
                     color: Colors.grey[400],
                     fontSize: 16,
@@ -506,7 +506,7 @@ class _DoRoutineTile extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
-        color: isFlashing ? Colors.green.withValues(alpha: 0.1) : Colors.transparent,
+        color: isFlashing ? const Color(0xFFE0B84F).withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Card(
@@ -536,7 +536,7 @@ class _DoRoutineTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: isCompleted
-                      ? const Icon(Icons.check_circle, color: Colors.green, size: 22)
+                      ? const Icon(Icons.check_circle, color: const Color(0xFFE0B84F), size: 22)
                       : Icon(Icons.circle_outlined,
                           color: theme.colorScheme.primary.withValues(alpha: 0.4), size: 22),
                 ),
@@ -580,6 +580,7 @@ class _ManualAddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     final adhoc = context.read<RoutineProvider>().adhocRoutines;
     if (adhoc.isEmpty) return const SizedBox.shrink();
@@ -589,11 +590,12 @@ class _ManualAddButton extends StatelessWidget {
         _showPicker(context, adhoc);
       },
       icon: const Icon(Icons.add),
-      label: Text(isZh ? '手动加入' : 'Add'),
+      label: Text(l.add),
     );
   }
 
   void _showPicker(BuildContext context, List<Routine> adhoc) {
+    final l = AppLocalizations.of(context)!;
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     showModalBottomSheet(
       context: context,
@@ -608,7 +610,7 @@ class _ManualAddButton extends StatelessWidget {
                 leading: _buildRoutineIcon(r, size: 22),
                 title: Text(r.displayName(isZh)),
                 trailing: manuallyAdded.contains(r.id)
-                    ? const Icon(Icons.check, color: Colors.green)
+                    ? const Icon(Icons.check, color: const Color(0xFFE0B84F))
                     : null,
                 onTap: () {
                   onAdd(r.id);
@@ -628,6 +630,7 @@ class _StreakMatrix extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -653,7 +656,7 @@ class _StreakMatrix extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            isZh ? '暂无完成记录。开始执行你的习惯吧！' : 'No completions yet. Start doing your habits!',
+            l.emptyStateHabits,
             style: TextStyle(color: Colors.grey[400]),
           ),
         ),
@@ -775,11 +778,11 @@ class _StreakMatrix extends StatelessWidget {
           children: [
             Container(width: 10, height: 10, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(1))),
             const SizedBox(width: 4),
-            Text(isZh ? '未完成' : 'Missed', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(l.streakLegendMissed, style: const TextStyle(fontSize: 11, color: Colors.grey)),
             const SizedBox(width: 16),
             Container(width: 10, height: 10, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(1))),
             const SizedBox(width: 4),
-            Text(isZh ? '已完成' : 'Done', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(l.streakLegendDone, style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
       ],
@@ -788,7 +791,6 @@ class _StreakMatrix extends StatelessWidget {
 }
 
 // Add / Edit dialog
-// ─────────────────────────────────────────────
 class RoutineDialog {
   static void show(BuildContext context, {Routine? existing}) {
     showDialog(
@@ -811,14 +813,14 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
   late TextEditingController _reminderController;
   late TextEditingController _whyController;
   late RoutineFrequency _frequency;
-  late List<int> _selectedDays; // for weekly
-  DateTime? _scheduledDate;     // for scheduled
+  late List<int> _selectedDays;
+  DateTime? _scheduledDate;
   RoutineCategory? _category;
   String? _iconImagePath;
   bool _isActive = true;
   bool _voiceEnabled = false;
 
-  static const List<String> _dayLabelsZh = ['', '一', '二', '三', '四', '五', '六', '日'];
+  static const List<String> _dayLabelsZh = ['', '\u4e00', '\u4e8c', '\u4e09', '\u56db', '\u4e94', '\u516d', '\u65e5'];
   static const List<String> _dayLabelsEn = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   @override
@@ -841,7 +843,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
   }
 
   void _onReminderChanged() {
-    setState(() {}); // Show/hide voice toggle dynamically as user types
+    setState(() {});
   }
 
   @override
@@ -855,10 +857,11 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     final isEdit = widget.existing != null;
     return AlertDialog(
-      title: Text(isEdit ? (isZh ? '编辑习惯' : 'Edit Routine') : (isZh ? '添加习惯' : 'Add Routine')),
+      title: Text(isEdit ? l.editRoutine : l.addRoutine),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -887,7 +890,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
                             )
                           : Center(
                               child: Text(
-                                widget.existing?.effectiveIcon ?? '⭐',
+                                widget.existing?.effectiveIcon ?? '\u2B50',
                                 style: const TextStyle(fontSize: 32),
                               ),
                             ),
@@ -924,7 +927,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
             )),
             const SizedBox(height: 12),
 
-            // Why — personal motivation
+            // Why
             TextField(
               controller: _whyController,
               maxLength: 120,
@@ -957,7 +960,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
               ),
             )),
             const SizedBox(height: 4),
-            // Voice toggle — only shown when global voice is enabled
+            // Voice toggle
             if (_reminderController.text.trim().isNotEmpty) ...[
               FutureBuilder<SharedPreferences>(
                 future: SharedPreferences.getInstance(),
@@ -984,7 +987,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
             const SizedBox(height: 12),
 
             // Frequency
-            Text(isZh ? '频率' : 'Frequency',
+            Text(l.frequency,
                 style: const TextStyle(fontSize: 13, color: Colors.grey)),
             const SizedBox(height: 6),
             DropdownButton<RoutineFrequency>(
@@ -993,7 +996,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
               items: [
                 DropdownMenuItem(
                     value: RoutineFrequency.daily,
-                    child: Text(isZh ? '每天' : 'Daily')),
+                    child: Text(l.daily)),
                 DropdownMenuItem(
                     value: RoutineFrequency.weekly,
                     child: Text(isZh ? '每周 (指定星期)' : 'Weekly (select days)')),
@@ -1009,7 +1012,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
               }),
             ),
 
-            // Day-of-week picker (for weekly)
+            // Day-of-week picker
             if (_frequency == RoutineFrequency.weekly) ...[
               const SizedBox(height: 8),
               Text(isZh ? '选择星期' : 'Select days',
@@ -1018,7 +1021,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
               Wrap(
                 spacing: 6,
                 children: List.generate(7, (i) {
-                  final day = i + 1; // 1=Mon…7=Sun
+                  final day = i + 1;
                   final selected = _selectedDays.contains(day);
                   return FilterChip(
                     label: Text((isZh ? _dayLabelsZh : _dayLabelsEn)[day]),
@@ -1035,7 +1038,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
               ),
             ],
 
-            // Date picker (for scheduled)
+            // Date picker
             if (_frequency == RoutineFrequency.scheduled) ...[
               const SizedBox(height: 8),
               Row(
@@ -1090,15 +1093,13 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(isZh ? '取消' : 'Cancel'),
+          child: Text(l.cancel),
         ),
         MergeSemantics(child: Semantics(
           identifier: 'btn_routine_dialog_save',
           child: TextButton(
             onPressed: _save,
-            child: Text(widget.existing != null
-                ? (isZh ? '保存' : 'Save')
-                : (isZh ? '添加' : 'Add')),
+            child: Text(widget.existing != null ? l.save : l.add),
           ),
         )),
       ],
@@ -1172,7 +1173,6 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
     final provider = context.read<RoutineProvider>();
 
     if (widget.existing != null) {
-      // Preserve the other locale's name/description — dialog shows current locale only
       final updated = widget.existing!.copyWith(
         name: isZh ? name : widget.existing!.name,
         nameEn: isZh ? widget.existing!.nameEn : name,
@@ -1192,7 +1192,6 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
         voiceEnabled: _voiceEnabled,
       );
       provider.updateRoutine(updated);
-      // Reschedule notification
       if (reminder != null && reminder.isNotEmpty) {
         NotificationService.scheduleRoutine(updated, isZh);
       } else {
@@ -1210,7 +1209,6 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
         iconImagePath: _iconImagePath,
         voiceEnabled: _voiceEnabled,
       );
-      // Schedule notification
       if (newRoutine != null && reminder != null && reminder.isNotEmpty) {
         NotificationService.scheduleRoutine(newRoutine, isZh);
       }

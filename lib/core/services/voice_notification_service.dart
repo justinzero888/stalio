@@ -2,16 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class VoiceNotificationService {
-  static final _tts = FlutterTts();
+  static FlutterTts? _tts;
   static bool _initialized = false;
   static String _currentLanguage = 'en-US';
 
   static Future<void> init() async {
     if (_initialized) return;
     try {
-      await _tts.setSpeechRate(0.45);
-      await _tts.setPitch(1.0);
-      await _tts.setVolume(0.8);
+      _tts ??= FlutterTts();
+      await _tts!.setSpeechRate(0.45);
+      await _tts!.setPitch(1.0);
+      await _tts!.setVolume(0.8);
       _initialized = true;
       _log('Initialized (rate=0.45, pitch=1.0, volume=0.8)');
     } catch (e) {
@@ -26,11 +27,11 @@ class VoiceNotificationService {
     }
     try {
       if (language != _currentLanguage) {
-        await _tts.setLanguage(language);
+        await _tts!.setLanguage(language);
         _currentLanguage = language;
       }
       _log('Speaking: "$text" ($language)');
-      await _tts.speak(text);
+      await _tts!.speak(text);
     } catch (e) {
       _log('TTS error: $e');
     }
@@ -38,7 +39,7 @@ class VoiceNotificationService {
 
   static Future<void> stop() async {
     try {
-      await _tts.stop();
+      await _tts?.stop();
     } catch (_) {}
   }
 

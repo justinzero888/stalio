@@ -1,0 +1,124 @@
+# Maestro Flow — Phase 3: L10n Language Switch
+# Validates EN ↔ ZH toggle works, all 5 screens render correctly in both locales
+# Run: maestro test test/maestro/phase3_l10n.yaml
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-01: Fresh launch → My Day in English
+# ---------------------------------------------------------------------------
+- launchApp:
+    clearState: true
+- assertVisible: "My Day"
+- assertVisible: "Stalio"
+- takeScreenshot: screenshots/p3_l10n_01_myday_en
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-02: Tallies renders in English
+# ---------------------------------------------------------------------------
+- tapOn: "Tallies"
+- assertVisible
+- takeScreenshot: screenshots/p3_l10n_02_tallies_en
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-03: Notes renders in English (search + filter chips)
+# ---------------------------------------------------------------------------
+- tapOn: "Notes"
+- assertVisible: "Search"
+- assertVisible: "All"
+- assertVisible: "Today"
+- assertVisible: "Tags"
+- takeScreenshot: screenshots/p3_l10n_03_notes_en
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-04: Settings English → General, Tags, Habit Build tabs
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- assertVisible: "General"
+- assertVisible: "Tags"
+- assertVisible: "Habit Build"
+- takeScreenshot: screenshots/p3_l10n_04_settings_en
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-05: Add Memory screen in English
+# ---------------------------------------------------------------------------
+- tapOn: "My Day"
+- tapOn: "+"
+- assertVisible: "Note"
+- assertVisible: "List"
+- takeScreenshot: screenshots/p3_l10n_05_add_entry_en
+- back
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-06: Switch language to Chinese
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- scroll
+- tapOn: "Language"
+- tapOn: "中文"
+- takeScreenshot: screenshots/p3_l10n_06_lang_switch
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-07: My Day in Chinese
+# ---------------------------------------------------------------------------
+- tapOn: "My Day"
+- assertVisible: "我的一天"
+- takeScreenshot: screenshots/p3_l10n_07_myday_zh
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-08: Settings in Chinese
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- assertVisible: "设置"
+- assertVisible: "通用"
+- assertVisible: "标签"
+- assertVisible: "习惯"
+- takeScreenshot: screenshots/p3_l10n_08_settings_zh
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-09: Tallies in Chinese
+# ---------------------------------------------------------------------------
+- tapOn: "Tallies"
+- assertVisible
+- takeScreenshot: screenshots/p3_l10n_09_tallies_zh
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-10: Notes in Chinese
+# ---------------------------------------------------------------------------
+- tapOn: "Notes"
+- assertVisible: "搜索"
+- assertVisible: "全部"
+- assertVisible: "今天"
+- takeScreenshot: screenshots/p3_l10n_10_notes_zh
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-11: Add Memory in Chinese
+# ---------------------------------------------------------------------------
+- tapOn: "My Day"
+- tapOn: "+"
+- assertVisible: "笔记"
+- assertVisible: "清单"
+- takeScreenshot: screenshots/p3_l10n_11_add_entry_zh
+- back
+
+---
+# ---------------------------------------------------------------------------
+# TC-L10N-12: Switch back to English and verify
+# ---------------------------------------------------------------------------
+- tapOn: "Settings"
+- scroll
+- tapOn: "语言"
+- tapOn: "English"
+- assertVisible: "Settings"
+- assertVisible: "General"
+- takeScreenshot: screenshots/p3_l10n_12_back_to_en

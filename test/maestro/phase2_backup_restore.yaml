@@ -1,0 +1,42 @@
+# Maestro Flow — Phase 2: Backup & Restore UI
+# Validates backup/restore buttons render, no crashes
+# Run: maestro test test/maestro/phase2_backup_restore.yaml
+#
+# Pre-requisite: Phase 1 must be signed off
+
+appId: com.microhabits.micro_habits
+---
+# ---------------------------------------------------------------------------
+# TC-P2-01: Backup button visible in Settings → General
+# ---------------------------------------------------------------------------
+- launchApp
+- tapOn: "Settings"
+- assertVisible: "Backup Data"
+- assertVisible: "Full Backup (ZIP)"
+- assertVisible: "Restore Data"
+- takeScreenshot: screenshots/p2_backup_01_buttons
+
+---
+# ---------------------------------------------------------------------------
+# TC-P2-02: Tap backup — shows progress / error but no crash
+# ---------------------------------------------------------------------------
+- tapOn: "Full Backup (ZIP)"
+- assertVisible
+- takeScreenshot: screenshots/p2_backup_02_backup_tapped
+
+---
+# ---------------------------------------------------------------------------
+# TC-P2-03: Restore opens confirmation dialog with Cancel/Confirm
+# ---------------------------------------------------------------------------
+- tapOn: "Restore Data"
+- assertVisible: "Confirm Restore"
+- assertVisible: "Cancel"
+- takeScreenshot: screenshots/p2_backup_03_restore_dialog
+
+---
+# ---------------------------------------------------------------------------
+# TC-P2-04: Cancel restore returns to Settings
+# ---------------------------------------------------------------------------
+- tapOn: "Cancel"
+- assertVisible: "Backup Data"
+- takeScreenshot: screenshots/p2_backup_04_cancelled

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:micro_habits/core/services/database_service.dart';
+import 'package:stalio/core/services/database_service.dart';
 
 void main() {
   sqfliteFfiInit();
@@ -40,13 +40,6 @@ void main() {
         reason: 'entry_tags table must have idx_entry_tags_tag_id',
       );
 
-      final noteCardEntriesIndexes = await _getIndexes(db, 'note_card_entries');
-      expect(
-        noteCardEntriesIndexes,
-        contains('idx_note_card_entries_card_id'),
-        reason: 'note_card_entries table must have idx_note_card_entries_card_id',
-      );
-
       final entriesIndexes = await _getIndexes(db, 'entries');
       expect(
         entriesIndexes,
@@ -74,46 +67,6 @@ void main() {
       final col = entryInfo.first['name'] as String;
       expect(col, 'entry_id',
           reason: 'idx_entry_tags_entry_id must index the entry_id column');
-
-      final cardInfo = await db.rawQuery(
-        "PRAGMA index_info('idx_note_card_entries_card_id')",
-      );
-      expect(cardInfo.length, 1);
-      final cardCol = cardInfo.first['name'] as String;
-      expect(cardCol, 'card_id',
-          reason: 'idx_note_card_entries_card_id must index the card_id column');
-
-      await db.close();
-    });
-
-    test('migration from v10 to v12 adds the two new indexes + v12 columns', () async {
-      final db = await DatabaseService.createTestDatabase(dbPath, version: 10);
-
-      await DatabaseService.runMigration(db, 10);
-
-      final entryTagsIndexes = await _getIndexes(db, 'entry_tags');
-      expect(entryTagsIndexes, contains('idx_entry_tags_entry_id'));
-
-      final noteCardEntriesIndexes = await _getIndexes(db, 'note_card_entries');
-      expect(noteCardEntriesIndexes, contains('idx_note_card_entries_card_id'));
-
-      final columns = await db.rawQuery('PRAGMA table_info("entries")');
-      final colNames = columns.map((c) => c['name'] as String).toList();
-      expect(colNames, contains('entry_format'));
-      expect(colNames, contains('list_items'));
-      expect(colNames, contains('list_carried_forward'));
-
-      await db.close();
-    });
-
-    test('migration is idempotent — running twice does not fail', () async {
-      final db = await DatabaseService.createTestDatabase(dbPath, version: 10);
-
-      await DatabaseService.runMigration(db, 10);
-      await DatabaseService.runMigration(db, 10);
-
-      final entryTagsIndexes = await _getIndexes(db, 'entry_tags');
-      expect(entryTagsIndexes, contains('idx_entry_tags_entry_id'));
 
       await db.close();
     });

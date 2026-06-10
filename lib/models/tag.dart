@@ -4,7 +4,8 @@ class Tag {
   final String name;
   final String nameEn; // English name
   final String color; // Hex color string (e.g., "#FF5500")
-  final String category; // Custom category
+  final String category; // Legacy category string
+  final String? categoryId; // FK to tag_categories (nullable, uncategorized if null)
   final DateTime createdAt;
 
   Tag({
@@ -13,6 +14,7 @@ class Tag {
     required this.nameEn,
     required this.color,
     this.category = 'custom',
+    this.categoryId,
     required this.createdAt,
   });
 
@@ -22,6 +24,7 @@ class Tag {
     String? nameEn,
     String? color,
     String? category,
+    String? categoryId,
     DateTime? createdAt,
   }) {
     return Tag(
@@ -30,6 +33,7 @@ class Tag {
       nameEn: nameEn ?? this.nameEn,
       color: color ?? this.color,
       category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -44,6 +48,7 @@ class Tag {
       'nameEn': nameEn,
       'color': color,
       'category': category,
+      'categoryId': categoryId,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -55,6 +60,7 @@ class Tag {
       nameEn: json['nameEn'] as String,
       color: json['color'] as String,
       category: json['category'] as String? ?? 'custom',
+      categoryId: json['categoryId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }

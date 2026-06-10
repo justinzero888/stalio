@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:micro_habits/models/routine.dart';
-import 'package:micro_habits/models/entry.dart';
-import 'package:micro_habits/providers/routine_provider.dart';
-import 'package:micro_habits/providers/entry_provider.dart';
-import 'package:micro_habits/providers/locale_provider.dart';
-import 'package:micro_habits/repositories/routine_repository.dart';
-import 'package:micro_habits/repositories/entry_repository.dart';
-import 'package:micro_habits/core/services/storage_service.dart';
-import 'package:micro_habits/screens/home/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:stalio/models/routine.dart';
+import 'package:stalio/models/entry.dart';
+import 'package:stalio/providers/routine_provider.dart';
+import 'package:stalio/providers/entry_provider.dart';
+import 'package:stalio/providers/locale_provider.dart';
+import 'package:stalio/repositories/routine_repository.dart';
+import 'package:stalio/repositories/entry_repository.dart';
+import 'package:stalio/core/services/storage_service.dart';
+import 'package:stalio/screens/home/home_screen.dart';
+import 'package:stalio/l10n/app_localizations.dart';
 
 class _FakeStorage extends StorageService {
   final List<Routine> routines;
@@ -54,10 +56,11 @@ RoutineCompletion _completion(String routineId, {DateTime? date}) =>
     );
 
 Widget _wrap(Widget child, {List<Routine> routines = const [], List<Entry> entries = const []}) {
+  SharedPreferences.setMockInitialValues({});
   final storage = _FakeStorage(routines: routines, entries: entries);
   return MultiProvider(
     providers: [
-      ChangeNotifierProvider(create: (_) => LocaleProvider()),
+      ChangeNotifierProvider(create: (_) => LocaleProvider()..setLocale(const Locale('en'))),
       ChangeNotifierProvider(create: (_) => EntryProvider(EntryRepository(storage))),
       ChangeNotifierProvider(
         create: (_) {
@@ -67,7 +70,12 @@ Widget _wrap(Widget child, {List<Routine> routines = const [], List<Entry> entri
         },
       ),
     ],
-    child: MaterialApp(home: child),
+    child: MaterialApp(
+      locale: const Locale('en'),
+      home: child,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+    ),
   );
 }
 
@@ -109,7 +117,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
       expect(find.byIcon(Icons.check_box_outline_blank), findsNothing);
       expect(find.text('5000 steps'), findsNothing);
     });
@@ -158,12 +166,12 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.check_circle), findsNothing);
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
 
       await tester.tap(find.text('5000 steps'));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
     });
 
     testWidgets('multiple routines render as separate ListTile items',

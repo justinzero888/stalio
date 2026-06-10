@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/routine.dart';
 import '../providers/locale_provider.dart';
+import '../l10n/app_localizations.dart';
 
 /// Widget for displaying a routine item in the routine dashboard
 class RoutineItem extends StatelessWidget {
@@ -29,6 +30,7 @@ class RoutineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     final active = routine.isActive;
     return Opacity(
@@ -54,12 +56,12 @@ class RoutineItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                _buildSubtitle(context, isZh),
+                _buildSubtitle(context, l, isZh),
                 if (!active)
                   IconButton(
                     icon: const Icon(Icons.play_arrow, size: 18),
                     onPressed: onTogglePause,
-                    tooltip: isZh ? '恢复' : 'Resume',
+                    tooltip: l.resume,
                     color: Colors.grey[400],
                   ),
                 if (active)
@@ -92,10 +94,10 @@ class RoutineItem extends StatelessWidget {
     );
   }
 
-  Widget _buildSubtitle(BuildContext context, bool isZh) {
+  Widget _buildSubtitle(BuildContext context, AppLocalizations l, bool isZh) {
     if (!routine.isActive) {
       return Text(
-        isZh ? '已暂停' : 'Paused',
+        l.paused,
         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
       );
     }
@@ -104,7 +106,7 @@ class RoutineItem extends StatelessWidget {
       return Row(
         children: [
           Text(
-            '${isZh ? '今日' : 'Today'}: $todayValue',
+            '${l.today}: $todayValue',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           Text(
@@ -122,7 +124,7 @@ class RoutineItem extends StatelessWidget {
           const Text('🔥', style: TextStyle(fontSize: 12)),
           const SizedBox(width: 4),
           Text(
-            isZh ? '${routine.streak} 天连续' : '${routine.streak} day streak',
+            l.dayStreak(routine.streak),
             style: TextStyle(fontSize: 12, color: Colors.orange[700]),
           ),
         ],

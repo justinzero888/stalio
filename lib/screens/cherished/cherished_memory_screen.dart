@@ -6,6 +6,8 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/summary_provider.dart';
 import '../../providers/tag_provider.dart';
+import '../../providers/tag_category_provider.dart';
+import 'tag_analytics_tab.dart';
 import '../../providers/jar_provider.dart';
 import '../../widgets/emoji_jar.dart';
 import '../../providers/entry_provider.dart';
@@ -53,13 +55,13 @@ class _InsightsContentState extends State<_InsightsContent> {
       ])));
     }
 
-    return DefaultTabController(length: 3, child: Column(children: [
+    return DefaultTabController(length: 4, child: Column(children: [
       _HeroStatsRow(summary: summary, isZh: isZh),
-      TabBar(tabs: [Tab(text: isZh?'Habits':'Habits'),Tab(text: isZh?'Notes':'Notes'),Tab(text: isZh?'Moods':'Moods')]),
+      TabBar(tabs: [Tab(text: isZh?'Habits':'Habits'),Tab(text: isZh?'Notes':'Notes'),Tab(text: isZh?'Moods':'Moods'),Tab(text: isZh?'Tags':'Tags')]),
       Expanded(child: TabBarView(children: [
         _HabitsTab(summary: summary, isZh: isZh),
         _NotesTab(summary: summary, isZh: isZh),
-        _MoodsTab(summary: summary, years: years, isZh: isZh),
+        _MoodsTab(summary: summary, years: years, isZh: isZh), TagAnalyticsTab(summary: summary, isZh: isZh),
       ])),
     ]));
   }
@@ -186,7 +188,7 @@ class _HeroStatsRow extends StatelessWidget {
         label: isZh ? '总记录' : 'Entries',
         value: '${summary.totalEntries}',
         icon: Icons.edit_note,
-        color: const Color(0xFF2A9D8F),
+        color: const Color(0xFF10317D),
       ),
       _HeroCardData(
         label: isZh ? '连续天数' : 'Day Streak',
@@ -201,7 +203,7 @@ class _HeroStatsRow extends StatelessWidget {
         label: isZh ? '习惯完成' : 'Habit Rate',
         value: '$habitRate%',
         icon: Icons.check_circle_outline,
-        color: const Color(0xFF2A9D8F),
+        color: const Color(0xFF10317D),
       ),
       _HeroCardData(
         label: isZh ? '本周心情' : 'Week Mood',
@@ -519,8 +521,8 @@ class _CalendarHeatmap extends StatelessWidget {
             const Text('Less ', style: TextStyle(fontSize: 9, color: Colors.grey)),
             _legendBox(const Color(0xFFE8E8E8)),
             _legendBox(const Color(0xFF9CD4CB)),
-            _legendBox(const Color(0xFF2A9D8F)),
-            _legendBox(const Color(0xFF0D3B34)),
+            _legendBox(const Color(0xFF10317D)),
+            _legendBox(const Color(0xFF0A151F)),
             const Text(' More', style: TextStyle(fontSize: 9, color: Colors.grey)),
           ],
         ),
@@ -540,9 +542,9 @@ class _CalendarHeatmap extends StatelessWidget {
     if (isFuture) return Colors.grey[100]!;
     if (count == 0) return const Color(0xFFE8E8E8);
     if (count == 1) return const Color(0xFF9CD4CB);
-    if (count <= 3) return const Color(0xFF2A9D8F);
+    if (count <= 3) return const Color(0xFF10317D);
     if (count <= 5) return const Color(0xFF1A7A6E);
-    return const Color(0xFF0D3B34);
+    return const Color(0xFF0A151F);
   }
 
   Widget _legendBox(Color color) {
@@ -572,7 +574,7 @@ class _MoodDistributionChart extends StatelessWidget {
   };
 
   static const _moodColors = {
-    '😊': Color(0xFF2A9D8F),
+    '😊': Color(0xFF10317D),
     '😌': Color(0xFFA8DADC),
     '😐': Color(0xFFE9C46A),
     '😢': Color(0xFF457B9D),
@@ -920,7 +922,7 @@ class _NoteCountChart extends StatelessWidget {
               barRods: [
                 BarChartRodData(
                   toY: e.value.count.toDouble(),
-                  color: const Color(0xFF2A9D8F),
+                  color: const Color(0xFF10317D),
                   width: 16,
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(4)),
@@ -1008,7 +1010,7 @@ class _RoutineCompletionChart extends StatelessWidget {
               barRods: [
                 BarChartRodData(
                   toY: e.value.value,
-                  color: const Color(0xFF2A9D8F),
+                  color: const Color(0xFF10317D),
                   width: 16,
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(4)),
@@ -1110,12 +1112,12 @@ class _EmotionTrendChart extends StatelessWidget {
                 return FlSpot(e.key.toDouble(), e.value.score);
               }).toList(),
               isCurved: true,
-              color: const Color(0xFF2A9D8F),
+              color: const Color(0xFF10317D),
               barWidth: 2,
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
                 show: true,
-                color: const Color(0xFF2A9D8F).withValues(alpha: 0.15),
+                color: const Color(0xFF10317D).withValues(alpha: 0.15),
               ),
             ),
           ],
@@ -1465,7 +1467,7 @@ class _TagMoodSection extends StatelessWidget {
     2: Color(0xFF457B9D),
     3: Color(0xFFE9C46A),
     4: Color(0xFFA8DADC),
-    5: Color(0xFF2A9D8F),
+    5: Color(0xFF10317D),
   };
 
   @override

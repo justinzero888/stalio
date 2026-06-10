@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:micro_habits/models/list_item.dart';
+import 'package:stalio/models/list_item.dart';
 
 void main() {
   group('ListItem', () {

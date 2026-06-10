@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-import 'package:micro_habits/core/services/storage_service.dart';
+import 'package:stalio/core/services/storage_service.dart';
 
 class MockPathProvider extends PathProviderPlatform {
   final String tempDir;
@@ -42,7 +42,7 @@ class MockPathProvider extends PathProviderPlatform {
 class _FakeStorageService extends StorageService {
   @override
   Future<void> init() async {
-    // Skip database init; only needed for prefs in persona tests
+    // Skip database init; use lightweight stub for restore flow tests
   }
 }
 
@@ -73,9 +73,9 @@ void main() {
         'entries': [],
         'tags': [],
         'routines': [],
-        'note_cards': [],
-        'card_folders': [],
-        'templates': [],
+
+
+
       });
 
       final jsonPath = '${tempDir.path}/test_backup.json';
@@ -104,9 +104,9 @@ void main() {
         'entries': [],
         'tags': [],
         'routines': [],
-        'note_cards': [],
-        'card_folders': [],
-        'templates': [],
+
+
+
       });
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
 
@@ -155,9 +155,9 @@ void main() {
         'entries': [],
         'tags': [],
         'routines': [],
-        'note_cards': [],
-        'card_folders': [],
-        'templates': [],
+
+
+
       });
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
 
@@ -187,9 +187,9 @@ void main() {
         'entries': [],
         'tags': [],
         'routines': [],
-        'note_cards': [],
-        'card_folders': [],
-        'templates': [],
+
+
+
       });
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
 
@@ -247,9 +247,9 @@ void main() {
         'entries': [],
         'tags': [],
         'routines': [],
-        'note_cards': [],
-        'card_folders': [],
-        'templates': [],
+
+
+
       });
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
 
@@ -274,213 +274,6 @@ void main() {
     });
   });
 
-  group('StorageService.restoreFromBackup — persona and export integration', () {
-    late Directory tempDir;
-    late Directory appDocDir;
-
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-      tempDir = Directory.systemTemp.createTempSync('restore_persona_');
-      appDocDir = Directory('${tempDir.path}/app_docs');
-      appDocDir.createSync(recursive: true);
-      PathProviderPlatform.instance = MockPathProvider(appDocDir.path);
-    });
-
-    tearDown(() {
-      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
-    });
-
-    test('restore extracts avatar file and sets prefs from persona.json', () async {
-      // Build ZIP with persona.json + avatar file + empty data.json
-      final archive = Archive();
-
-      final dataJson = jsonEncode({
-        'entries': [],
-        'tags': [],
-        'routines': [],
-      });
-      archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
-
-      final avatarContent = List<int>.filled(512, 42);
-      archive.addFile(ArchiveFile(
-        'avatar/test_avatar.jpg',
-        avatarContent.length,
-        avatarContent,
-      ));
-
-      final personaJson = jsonEncode({
-        'ai_assistant_name': '测试助手',
-        'ai_assistant_personality': 'warm and encouraging',
-        'ai_avatar_zip_path': 'avatar/test_avatar.jpg',
-      });
-      archive.addFile(ArchiveFile(
-        'persona.json',
-        personaJson.length,
-        utf8.encode(personaJson),
-      ));
-
-      final zipPath = '${tempDir.path}/persona_restore.zip';
-      final zipBytes = ZipEncoder().encode(archive);
-      File(zipPath).writeAsBytesSync(zipBytes);
-
-      // Manually decode and verify (simulating the restore code path)
-      final inputStream = InputFileStream(zipPath);
-      Archive? decoded;
-      try {
-        decoded = ZipDecoder().decodeStream(inputStream);
-        final arch = decoded;
-
-        // Verify persona.json content
-        final personaFile = arch.findFile('persona.json');
-        expect(personaFile, isNotNull);
-        final personaStr = utf8.decode(personaFile!.content as List<int>);
-        final personaMap = json.decode(personaStr) as Map<String, dynamic>;
-        expect(personaMap['ai_assistant_name'], '测试助手');
-        expect(personaMap['ai_assistant_personality'], 'warm and encouraging');
-        expect(personaMap['ai_avatar_zip_path'], 'avatar/test_avatar.jpg');
-
-        // Verify avatar file was extracted
-        final avatarFile = arch.findFile('avatar/test_avatar.jpg');
-        expect(avatarFile, isNotNull);
-
-        // Extract avatar to disk
-        final targetPath = '${appDocDir.path}/avatar/test_avatar.jpg';
-        Directory('${appDocDir.path}/avatar').createSync(recursive: true);
-        final output = OutputFileStream(targetPath);
-        try {
-          avatarFile!.writeContent(output);
-        } finally {
-          await output.close();
-        }
-        expect(File(targetPath).existsSync(), isTrue);
-        expect(File(targetPath).lengthSync(), 512);
-      } finally {
-        await decoded?.clear();
-        await inputStream.close();
-      }
-    });
-
-    test('restore without persona.json does not crash', () async {
-      final archive = Archive();
-      final dataJson = jsonEncode({
-        'entries': [],
-        'tags': [],
-        'routines': [],
-      });
-      archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
-
-      final zipPath = '${tempDir.path}/no_persona_restore.zip';
-      final zipBytes = ZipEncoder().encode(archive);
-      File(zipPath).writeAsBytesSync(zipBytes);
-
-      final inputStream = InputFileStream(zipPath);
-      Archive? decoded;
-      try {
-        decoded = ZipDecoder().decodeStream(inputStream);
-        expect(decoded!.findFile('persona.json'), isNull);
-        expect(decoded.findFile('data.json'), isNotNull);
-      } finally {
-        await decoded?.clear();
-        await inputStream.close();
-      }
-    });
-
-    test('restore with corrupted persona.json does not crash', () async {
-      final archive = Archive();
-      final dataJson = jsonEncode({
-        'entries': [],
-        'tags': [],
-        'routines': [],
-      });
-      archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
-
-      archive.addFile(ArchiveFile(
-        'persona.json',
-        12,
-        utf8.encode('not json {{{'),
-      ));
-
-      final zipPath = '${tempDir.path}/corrupted_persona.zip';
-      final zipBytes = ZipEncoder().encode(archive);
-      File(zipPath).writeAsBytesSync(zipBytes);
-
-      final inputStream = InputFileStream(zipPath);
-      Archive? decoded;
-      try {
-        decoded = ZipDecoder().decodeStream(inputStream);
-        final personaFile = decoded!.findFile('persona.json');
-        expect(personaFile, isNotNull);
-        final personaStr = utf8.decode(personaFile!.content as List<int>);
-        // Verify it parses as invalid (restore code catches this)
-        expect(() => json.decode(personaStr) as Map<String, dynamic>,
-            throwsA(isA<FormatException>()));
-      } finally {
-        await decoded?.clear();
-        await inputStream.close();
-      }
-    });
-
-    test('restore without persona.json does not crash', () async {
-      final archive = Archive();
-      final dataJson = jsonEncode({
-        'entries': [],
-        'tags': [],
-        'routines': [],
-      });
-      archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
-
-      final zipPath = '${tempDir.path}/no_persona_restore.zip';
-      final zipBytes = ZipEncoder().encode(archive);
-      File(zipPath).writeAsBytesSync(zipBytes);
-
-      final inputStream = InputFileStream(zipPath);
-      Archive? decoded;
-      try {
-        decoded = ZipDecoder().decodeStream(inputStream);
-        expect(decoded.findFile('persona.json'), isNull);
-        expect(decoded.findFile('data.json'), isNotNull);
-      } finally {
-        await decoded?.clear();
-        await inputStream.close();
-      }
-    });
-
-    test('restore with corrupted persona.json does not crash', () async {
-      final archive = Archive();
-      final dataJson = jsonEncode({
-        'entries': [],
-        'tags': [],
-        'routines': [],
-      });
-      archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
-
-      archive.addFile(ArchiveFile(
-        'persona.json',
-        12,
-        utf8.encode('not json {{{'),
-      ));
-
-      final zipPath = '${tempDir.path}/corrupted_persona.zip';
-      final zipBytes = ZipEncoder().encode(archive);
-      File(zipPath).writeAsBytesSync(zipBytes);
-
-      final inputStream = InputFileStream(zipPath);
-      Archive? decoded;
-      try {
-        decoded = ZipDecoder().decodeStream(inputStream);
-        final personaFile = decoded.findFile('persona.json');
-        expect(personaFile, isNotNull);
-        final personaStr = utf8.decode(personaFile!.content as List<int>);
-        // Verify it parses as invalid (restore code catches this)
-        expect(() => json.decode(personaStr) as Map<String, dynamic>,
-            throwsA(isA<FormatException>()));
-      } finally {
-        await decoded?.clear();
-        await inputStream.close();
-      }
-    });
-  });
-
   group('StorageService.restoreFromBackup — streaming', () {
     late Directory tempDir;
 
@@ -498,7 +291,7 @@ void main() {
 
       final dataJson = jsonEncode({
         'entries': [], 'tags': [], 'routines': [],
-        'note_cards': [], 'card_folders': [], 'templates': [],
+
       });
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
 
@@ -531,7 +324,7 @@ void main() {
 
       final dataJson = jsonEncode({
         'entries': [], 'tags': [], 'routines': [],
-        'note_cards': [], 'card_folders': [], 'templates': [],
+
       });
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
 
@@ -567,7 +360,7 @@ void main() {
 
       final dataJson = jsonEncode({
         'entries': [], 'tags': [], 'routines': [],
-        'note_cards': [], 'card_folders': [], 'templates': [],
+
       });
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
 
@@ -593,16 +386,15 @@ void main() {
     test('fused decode produces identical data as two-step decode', () async {
       final dataJson = jsonEncode({
         'entries': [], 'tags': [], 'routines': [],
-        'note_cards': [], 'card_folders': [], 'templates': [],
       });
       final archive = Archive();
       archive.addFile(ArchiveFile('data.json', dataJson.length, utf8.encode(dataJson)));
-      archive.addFile(ArchiveFile('persona.json', jsonEncode({
-        'ai_assistant_name': 'Test',
-        'ai_assistant_personality': 'testing',
+      archive.addFile(ArchiveFile('manifest.json', jsonEncode({
+        'version': 1,
+        'exported_at': '2026-01-01T00:00:00Z',
       }).length, utf8.encode(jsonEncode({
-        'ai_assistant_name': 'Test',
-        'ai_assistant_personality': 'testing',
+        'version': 1,
+        'exported_at': '2026-01-01T00:00:00Z',
       }))));
 
       final zipPath = '${tempDir.path}/fused_test.zip';
@@ -621,11 +413,11 @@ void main() {
         expect(fusedData, isA<Map<String, dynamic>>());
         expect((fusedData as Map<String, dynamic>)['tags'], isEmpty);
 
-        // Verify persona.json via fused decode
-        final personaFile = decoded.findFile('persona.json');
-        expect(personaFile, isNotNull);
-        final fusedPersona = json.fuse(utf8).decode(personaFile!.content as List<int>);
-        expect((fusedPersona as Map<String, dynamic>)['ai_assistant_name'], 'Test');
+        // Verify manifest.json via fused decode
+        final manifestFile = decoded.findFile('manifest.json');
+        expect(manifestFile, isNotNull);
+        final fusedManifest = json.fuse(utf8).decode(manifestFile!.content as List<int>);
+        expect((fusedManifest as Map<String, dynamic>)['version'], 1);
       } finally {
         await decoded?.clear();
         await inputStream.close();

@@ -7,6 +7,7 @@ import 'repositories/repositories.dart';
 import 'providers/routine_provider.dart';
 import 'providers/entry_provider.dart';
 import 'providers/tag_provider.dart';
+import 'providers/tag_category_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/jar_provider.dart';
@@ -20,10 +21,10 @@ import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
 import 'core/services/export_service.dart';
 
-class BlinkingApp extends StatelessWidget {
+class StalioApp extends StatelessWidget {
   final StorageService storageService;
 
-  const BlinkingApp({super.key, required this.storageService});
+  const StalioApp({super.key, required this.storageService});
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +32,7 @@ class BlinkingApp extends StatelessWidget {
     final entryRepository = EntryRepository(storageService);
     final routineRepository = RoutineRepository(storageService);
     final tagRepository = TagRepository(storageService);
+    final tagCategoryRepository = TagCategoryRepository(storageService);
 
     return MultiProvider(
       providers: [
@@ -41,7 +43,11 @@ class BlinkingApp extends StatelessWidget {
         ),
 
         // Theme provider
-        ChangeNotifierProvider(create: (_) => ThemeProvider(storageService)),
+        ChangeNotifierProvider(create: (_) {
+          final provider = ThemeProvider(storageService);
+          provider.loadSettings();
+          return provider;
+        }),
 
         // Locale provider
         ChangeNotifierProvider(create: (_) {
@@ -66,6 +72,9 @@ class BlinkingApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => TagProvider(tagRepository)..loadTags(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => TagCategoryProvider(tagCategoryRepository)..loadCategories(),
+        ),
 
         // JarProvider — depends on EntryProvider
         ChangeNotifierProxyProvider<EntryProvider, JarProvider>(
@@ -84,14 +93,14 @@ class BlinkingApp extends StatelessWidget {
           update: (context, ep, rp, summary) => summary!..update(ep, rp),
         ),
       ],
-      child: Consumer<LocaleProvider>(
-        builder: (context, localeProvider, _) {
+      child: Consumer2<LocaleProvider, ThemeProvider>(
+        builder: (context, localeProvider, themeProvider, _) {
           return MaterialApp(
-            title: 'Blinking',
+            title: 'Stalio',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.light,
+            themeMode: themeProvider.themeMode,
             locale: localeProvider.locale,
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -189,10 +198,10 @@ class _MainScreenState extends State<MainScreen> {
             icon: Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A2533),
+                color: const Color(0xFF10317D),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.add, color: Color(0xFFFFD700), size: 32, weight: 700),
+              child: const Icon(Icons.add, color: Color(0xFFE0B84F), size: 32, weight: 700),
             ),
             label: '',
           ),

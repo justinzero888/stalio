@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:micro_habits/models/entry.dart';
-import 'package:micro_habits/models/tag.dart';
-import 'package:micro_habits/providers/entry_provider.dart';
-import 'package:micro_habits/providers/locale_provider.dart';
-import 'package:micro_habits/providers/tag_provider.dart';
-import 'package:micro_habits/repositories/entry_repository.dart';
-import 'package:micro_habits/repositories/tag_repository.dart';
-import 'package:micro_habits/core/services/storage_service.dart';
-import 'package:micro_habits/screens/moment/entry_detail_screen.dart';
+import 'package:stalio/models/entry.dart';
+import 'package:stalio/models/tag.dart';
+import 'package:stalio/providers/entry_provider.dart';
+import 'package:stalio/providers/locale_provider.dart';
+import 'package:stalio/providers/tag_provider.dart';
+import 'package:stalio/repositories/entry_repository.dart';
+import 'package:stalio/repositories/tag_repository.dart';
+import 'package:stalio/core/services/storage_service.dart';
+import 'package:stalio/screens/moment/entry_detail_screen.dart';
 
 /// Fake StorageService — no platform channels needed.
 class _FakeStorage extends StorageService {

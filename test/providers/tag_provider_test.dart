@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:micro_habits/models/tag.dart';
-import 'package:micro_habits/providers/tag_provider.dart';
-import 'package:micro_habits/repositories/tag_repository.dart';
-import 'package:micro_habits/core/services/storage_service.dart';
+import 'package:stalio/models/tag.dart';
+import 'package:stalio/providers/tag_provider.dart';
+import 'package:stalio/repositories/tag_repository.dart';
+import 'package:stalio/core/services/storage_service.dart';
 
 class _MockStorageService extends StorageService {
   final List<Tag> _tags = [];
