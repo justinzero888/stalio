@@ -76,6 +76,15 @@
 	<string>Stalio saves exported files and shared images to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Stalio uses the microphone for voice reminders of your daily habits.</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-7497527413129091~5735736505</string>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
