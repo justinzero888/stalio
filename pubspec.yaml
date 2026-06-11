@@ -76,7 +76,6 @@ flutter:
     - assets/icons/
     - assets/images/
     - assets/avatars/
-    - assets/cards/
   fonts:
     - family: MaShanZheng
       fonts:
