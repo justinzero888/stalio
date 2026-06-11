@@ -1,4 +1,4 @@
-package com.microhabits.micro_habits
+package com.orbacetech.stalio
 
 import io.flutter.embedding.android.FlutterActivity
 
