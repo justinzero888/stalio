@@ -74,9 +74,4 @@ flutter:
   generate: true
   assets:
     - assets/icons/
-    - assets/images/
-    - assets/avatars/
-  fonts:
-    - family: MaShanZheng
-      fonts:
-        - asset: assets/fonts/MaShanZheng-Regular.ttf
+
