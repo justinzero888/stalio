@@ -24,13 +24,9 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access is needed for voice transcription of your notes.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Speech recognition is used to transcribe your voice into text notes.</string>
-	<key>UIApplicationSceneManifest</key>
+ 	<key>LSRequiresIPhoneOS</key>
+ 	<true/>
+ 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
