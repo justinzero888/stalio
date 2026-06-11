@@ -1,95 +1,115 @@
-# Session Summary — June 2, 2026
+# Session Summary — June 10, 2026
 
 ## What Was Built
 
-### Phase 1: Foundation & Branding (Complete — PM Signed Off)
-- Test suite rebuilt: removed AI/card system tests, migrated `micro_habits → stalio` imports, 166 tests pass
-- Color schema: green/teal (#2A9D8F) → navy (#10317D) + gold (#E0B84F) across all screens and platform configs
-- Dark theme fully defined with gold accents, light theme with warm off-white scaffold
-- Legal content: all "Blinking"/"记忆闪烁"/"Pro"/"AI" references removed from English + Chinese versions
-- App icon: navy background + gold tally mark, adaptive icon with transparent foreground, no inset clipping
-- App title changed from 'Blinking' to 'Stalio', themeMode wired to ThemeProvider
+### Phase 4: Feature Expansion (Complete)
+- **Tag Management Redesign:** TagCategory model + repository + provider; DB migration v16→v17 adding `tag_categories` table and `category_id` FK on `tags`; expandable category sections in Settings → Tags tab; bulk operations (multi-select, assign category, merge tags, batch recolor); tag auto-suggest in Add Entry using bilingual keyword matching
+- **Analytics:** 4th "Tags" tab in Tallies with usage bar chart, co-occurrence pairs, and timeline line chart (fl_chart)
+- **Export:** CSV export with date range picker (All/30d/90d/Custom); PDF export with title page, entry list, streak summary, progress indicator
+- **Notes Share:** Multi-select mode in Moments tab (long-press, checkboxes, select-all per category); share preview with format switcher (Plain/Markdown/Rich); copy to clipboard, system share sheet, save as file
+- **Category Filter Chips:** Second filter row in Moments tab for filtering entries by tag category
 
-### Phase 2: Core Features (Complete — Awaiting PM Sign-off)
-- Backup/Restore UI wired: "Full Backup (ZIP)" → ExportService.exportAll() → share_plus; "Restore Data" → FilePicker → confirmation dialog → StorageService.restoreFromBackup(); progress indicators, error handling, gold success snackbar
-- Performance: FlutterTts made lazy (was eager static field), TTS init deferred until voice notification triggers
-- 232 tests pass (166 Phase 1 + 13 Phase 2 widget/integration + 53 smoke/utility)
-
-### Color Polish (During Phase 2)
-- Habit check icons: all green replaced with gold (#E0B84F) across home_screen.dart, routine_screen.dart, calendar_widget.dart
-- Filter chips (All/Today/This week/Tags): selected state now navy background + gold text + gold checkmark — explicit color on FilterChip widget (Material3 secondaryLabelStyle doesn't apply)
-- Habit Check-in section header: system emoji "✅" replaced with Flutter Icon(check_circle, gold)
-- One remaining green: language checkmark in settings (intentional, semantic/functional)
+### Phase 5: Infrastructure & Monetization (In Progress)
+- **AI Cleanup:** Deleted `soft_prompt_service.dart`, `chorus_service.dart`, `post_to_chorus_sheet.dart`; removed "Post to Chorus" from entry detail screen; purged OpenRouter API key from git history
+- **RevenueCat Cleanup:** Deleted `purchases_service.dart`, `entitlement_service.dart`, `paywall_screen.dart`, `transition_screen.dart`; removed `purchases_flutter` from pubspec
+- **CI/CD Pipeline:** `.github/workflows/ci.yml` — analyze + test on push/PR; fixed Flutter version mismatch (3.32→3.44) and fatal-warnings issue
+- **Builds Protocol:** `.builds/current.json` + `results.json` schemas; `scripts/pre-commit.sh` (analyze + test + secret scan)
+- **Bundle ID:** Unified to `com.orbacetech.stalio` across Android, iOS, macOS, and Maestro flows
+- **Release Signing:** Generated Android release keystore (CN=Stalio); configured build.gradle.kts
+- **iOS Store Readiness:** Added NSPhotoLibraryUsageDescription, NSMicrophoneUsageDescription, ITSAppUsesNonExemptEncryption, GADApplicationIdentifier + SKAdNetwork to Info.plist
+- **Store Builds:** Android AAB (70.1 MB, release-signed) + iOS IPA (43.9 MB, App Store Connect)
+- **Business:** Recorded all decisions in `BUSINESS_DECISIONS_RECORD.md`; AdMob App IDs + Unit IDs received; Privacy Policy URL confirmed
+- **Documentation:** `STALIO_TEST_PLAN.md`, `BUILD_TEST_VC_RULES.md`, `GAP_ANALYSIS.md`, `PHASE5_PLAN.md`, `UAT_PHASE4.md`, 8 Maestro UAT flows
 
 ## Project Status
 
-| Phase | Status | Tests | Test Files |
-|---|---|---|---|
-| 1: Foundation & Branding | Signed off | 166 | 24 |
-| 2: Core Features | Awaiting PM sign-off | 13 (+1 manual) | 3 |
-| 3: UX & Localization | Not started | — | — |
-| 4: Feature Expansion | Not started | — | — |
-| 5: Monetization | Blocked (external setup) | — | — |
-| 6: Polish & Delight | Not started | — | — |
-| **Total** | | **232 passing** | **27 files** |
+| Phase | Status | Tests |
+|---|---|---|
+| 1: Foundation & Branding | Signed off | 166 |
+| 2: Core Features | Signed off | 13 |
+| 3: UX & Localization | Signed off | 74 |
+| 4: Feature Expansion | Complete (ready for QA) | 67 |
+| 5: Infrastructure | In progress | — |
+| **Total** | | **320 passing** |
 
-## Files Created/Modified
+## Files Changed (138 total)
 
-### Phase 1
-- `lib/core/config/theme.dart` — navy + gold colors, dark theme completion
-- `lib/app.dart` — title 'Stalio', themeMode wired
-- `lib/core/constants/legal_content.dart` — all Blinking/AI/Pro/Chorus references removed
-- `lib/screens/cherished/cherished_memory_screen.dart` — navy colors (sed)
-- `lib/screens/routine/routine_screen.dart` — teal → navy/gold (sed)
-- `lib/screens/home/home_screen.dart` — green → gold
-- `lib/widgets/calendar_widget.dart` — teal → navy, green → gold
-- `android/app/src/main/res/values/colors.xml` — #0D3B34 → #10317D
-- `ios/Runner/Base.lproj/LaunchScreen.storyboard` — navy background
-- `assets/icons/app_icon.png` — new icon from stalio_icon_1.png
-- `pubspec.yaml` — adaptive_icon_background #10317D
-- `test/core/db_index_test.dart` — card system index tests removed
-- `test/core/export_service_progress_test.dart` — AI persona tests removed
-- `test/core/storage_service_restore_test.dart` — AI persona + duplicates removed
-- `test/core/version_test.dart` — appName → 'Stalio'
-- All test files — `micro_habits → stalio` import rename
+### Phase 4 New Files (47)
+- `lib/models/tag_category.dart` — TagCategory model
+- `lib/repositories/tag_category_repository.dart` — TagCategory data access
+- `lib/providers/tag_category_provider.dart` — TagCategory state management
+- `lib/core/utils/share_format.dart` — ShareFormat utility (Plain/Markdown/Rich)
+- `lib/screens/cherished/tag_analytics_tab.dart` — Tag analytics widget
+- `test/models/tag_category_test.dart` (6 tests)
+- `test/providers/tag_category_provider_test.dart` (11 tests)
+- `test/models/entry_share_format_test.dart` (9 tests)
+- `test/core/export_csv_test.dart` (3 tests)
+- `test/core/export_pdf_test.dart` (4 tests)
+- `test/integration/phase4_tag_migration_test.dart` (3 tests)
+- `test/integration/phase4_export_roundtrip_test.dart` (2 tests)
+- `test/screens/tag_category_ui_test.dart` (9 tests)
+- `test/screens/tag_analytics_test.dart` (4 tests)
+- `test/screens/tag_autosuggest_test.dart` (5 tests)
+- `test/screens/category_filter_chips_test.dart` (4 tests)
+- `test/screens/notes_share_selection_test.dart` (6 tests)
+- `test/screens/notes_share_preview_test.dart` (3 tests)
+- `test/maestro/phase4_*.yaml` (8 flows, 34 test cases)
+- `docs/STALIO_TEST_PLAN.md`, `docs/UAT_PHASE4.md`, `docs/PHASE5_PLAN.md`
+- `docs/BUILD_TEST_VC_RULES.md`, `docs/GAP_ANALYSIS.md`, `docs/BUSINESS_DECISIONS_RECORD.md`
+- `lesson_learned_06_10.md`, `works_item_0610.md`
 
-### Phase 2
-- `lib/screens/settings/settings_screen.dart` — backup/restore UI wired, share_plus + file_picker imports
-- `lib/core/services/voice_notification_service.dart` — lazy TTS init
-- `lib/core/services/storage_service.dart` — reverted to individual transactions (batched tx caused DB lock)
-- `test/screens/backup_restore_screen_test.dart` — 6 widget tests (new)
-- `test/integration/phase2_backup_roundtrip_test.dart` — 4 integration tests (new)
-- `test/integration/phase2_restore_errors_test.dart` — 3 integration tests (new)
-- `test/screens/home_screen_test.dart` — updated for section header check_circle
+### Phase 5 New Files
+- `.github/workflows/ci.yml` — CI pipeline (analyze + test)
+- `.builds/current.json`, `.builds/results.json` — builds protocol
+- `scripts/pre-commit.sh` — pre-commit hook
 
-### Documents
-- `IMPLEMENTATION_PLAN.md` — 6-phase plan with test case tables per phase
-- `EXTERNAL_SETUP_GUIDE.md` — AdMob/Google Play/App Store Connect step-by-step
-- `docs/UAT_PHASE1.md` — 61 manual validation test cases
+### Phase 5 Deleted Files
+- `lib/core/services/soft_prompt_service.dart`
+- `lib/core/services/chorus_service.dart`
+- `lib/screens/chorus/post_to_chorus_sheet.dart`
+- `lib/core/services/purchases_service.dart`
+- `lib/core/services/entitlement_service.dart`
+- `lib/screens/purchase/paywall_screen.dart`
+- `lib/screens/onboarding/transition_screen.dart`
 
-## Git
-- No git repo initialized (project not under version control yet)
-- `flutter test`: 232 tests pass (166 P1 + 13 P2 + 53 smoke/utility)
-- All three sims running with latest code, zero analysis errors
+### Modified Files (Key)
+- `lib/models/tag.dart` — added `categoryId` FK field
+- `lib/providers/tag_provider.dart` — `addTag` accepts `categoryId`, added `mergeTags`
+- `lib/repositories/tag_repository.dart` — added `mergeTags`, `batchUpdate`
+- `lib/core/services/database_service.dart` — v17 migration, `_onCreate` version-gating
+- `lib/core/services/storage_service.dart` — tag_category CRUD methods, `reassignEntryTags`, `deleteTagsByIds`
+- `lib/core/services/export_service.dart` — `exportPdf()` with pagination, `exportCsv()` with date filters
+- `lib/screens/settings/settings_screen.dart` — expandable categories, bulk ops, CSV/PDF export tiles
+- `lib/screens/moment/moment_screen.dart` — multi-select share, category filter chips
+- `lib/screens/cherished/cherished_memory_screen.dart` — 4th Tags tab (sed only)
+- `lib/screens/add_entry_screen.dart` — tag auto-suggest with keyword matching
+- `lib/screens/moment/entry_detail_screen.dart` — removed Chorus button
+- `lib/app.dart` — TagCategoryProvider wiring
+- `lib/providers/summary_provider.dart` — `tagUsageCount()`, `getEntriesWithTags()`
+- `lib/providers/entry_provider.dart` — `loadEntriesForTest()` helper
+- `ios/Runner/Info.plist` — privacy strings, encryption, GADApplicationIdentifier
+- `android/app/build.gradle.kts` — release keystore signing
+
+## Key Decisions
+
+1. AI dead code fully purged (services + DB key + git history)
+2. Bundle ID unified to `com.orbacetech.stalio`
+3. Repo pushed to GitHub: `https://github.com/justinzero888/stalio.git`
+4. AdMob banners on Settings + My Day; `remove_ads` $2.99 one-time purchase
+5. iOS builds signed with team `4Q4LMBRDM3` (Li Zuo)
+6. All pre-existing `micro_habits` / `microHabits` / `blinkingchorus` refs removed
 
 ## What's Next
 
-### PM (Human)
-1. **Phase 2 sign-off** — validate backup/restore UI on sims, measure cold start time
-2. **External platform setup** (see `EXTERNAL_SETUP_GUIDE.md`) — start AdMob, Google Merchant, Apple Paid Apps accounts for Phase 5
+### Dev
+1. **Phase 5 Items 17-19:** Environment config, code coverage baseline, Dependabot
+2. **Phase 5 AdMob Integration:** Wire `google_mobile_ads` in Dart code (banners on Settings + My Day)
+3. **Phase 5 IAP Integration:** Wire `remove_ads` purchase flow (blocked on Google Play / App Store product creation)
+4. **Phase 6:** DB schema cleanup (drop AI tables), `cherished_memory_screen.dart` split
 
-### Dev (Agent)
-1. **Phase 3: UX & Localization** (Week 3-4) — upon PM sign-off:
-   - L10n Audit: update ARB files (appName → 'Stalio'), replace all `isZh ?` patterns with `l10n.xxx`, add missing ARB keys
-   - Dark Mode Polish: full visual QA pass
-   - iOS Name Cache Fix: document clean build script
-   - 14 new tests to write
-2. **Phase 4: Feature Expansion** — Tag categories, CSV/PDF export, Notes share redesign
-3. **Phase 5: Monetization** — AdMob + Remove Ads IAP (blocked on external setup)
-4. **Phase 6: Polish & Delight** — Habit images, streak animations
-
-### Known Issues
-- Cold start ~2s (measured on Android emulator, TTS lazy init helped)
-- Onboarding transition_screen.dart still exists but dead code (navigates to deleted paywall)
-- RevenueCat purchases_service.dart still runs in background (logs but no crash) — will be deleted in Phase 5
-- Seed data batching blocked by sqflite transaction handle locking — needs deeper refactoring
+### Business Owner
+1. Create `remove_ads` IAP product in Google Play Console (product ID: `remove_ads`, $2.99)
+2. Create `remove_ads` IAP product in App Store Connect (product ID: `remove_ads`, Tier 1)
+3. Upload AAB to Google Play Console → Closed Testing track
+4. Complete App Store Connect app metadata (screenshots, description)
+5. Approve TestFlight build #5 for internal testing

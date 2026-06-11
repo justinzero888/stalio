@@ -1,13 +1,15 @@
 # Stalio — Project Status
 
-> Stalio: Do. Tally. Grow. v1.0.0-dev. Last updated: June 9, 2026
+> Stalio: Do. Tally. Grow. v1.0.0+5. Last updated: June 10, 2026
 
 ## Build
 
 | Metric | Status |
 |--------|--------|
-| `flutter analyze` (lib) | 0 errors, 0 warnings |
-| `flutter test` | 253 tests pass, exit 0 |
+| `flutter analyze` | 0 errors, 134 pre-existing warnings |
+| `flutter test` | 320 tests pass, exit 0 |
+| GitHub CI | ✅ Green (analyze + test on push) |
+| Pre-commit hook | `scripts/pre-commit.sh` (analyze + test + secret scan) |
 | iPhone 17 Pro | Running |
 | iPad Air 11" M4 | Running |
 | Android API 36 | Running |
@@ -18,143 +20,133 @@
 |-------|-------|
 | Name | Stalio |
 | Tagline | Do. Tally. Grow. |
-| Package | stalio (com.microhabits.micro_habits) |
-| Version | 1.0.0+1 (dev) |
+| Package | com.orbacetech.stalio |
+| Version | 1.0.0+5 |
+| Repo | https://github.com/justinzero888/stalio.git |
 
-## Navigation (5 tabs, stationed)
+## Navigation (5 tabs)
 
 ```
 [ My Day ]  [ Tallies ]  [  +  ]  [ Notes ]  [ Settings ]
 ```
-- `+` is navy (#10317D) rounded square with golden (#E0B84F) plus — opens Add Entry
 
-## Architecture
+## Store Builds
 
-### Provider Tree
-```
-StorageService
-├── EntryProvider     (notes CRUD, search, filter)
-├── RoutineProvider   (habits CRUD, completion, voice scheduling)
-├── TagProvider       (tag CRUD)
-├── LocaleProvider    (EN/ZH)
-├── ThemeProvider     (light/dark/system)
-├── JarProvider       (emotion aggregation)
-└── SummaryProvider   (chart metrics)
-```
-
-### Storage
-- SQLite: entries, tags, entry_tags, routines, completions
-- SharedPreferences: voice toggle, theme_mode, locale, seed flags
-- Theme persistence: SharedPreferences key `theme_mode` (light/dark/system)
-- Seed data: 8 demo entries, 31 habits (3 active), 6 custom tags + 1 system tag
-
----
+| Platform | Build | Artifact | Status |
+|----------|-------|----------|--------|
+| Android | 1.0.0 (5) | `app-release.aab` (70.1 MB) | Release-signed (CN=Stalio) |
+| iOS | 1.0.0 (5) | `stalio.ipa` (43.9 MB) | App Store Connect (processing) |
 
 ## Phase Status
 
 | Phase | Status | Tests | Sign-off |
 |---|---|---|---|
 | 1: Foundation & Branding | **Signed off** | 166 | ✓ |
-| 2: Core Features | **Signed off** | 13 + 1 manual | ✓ |
-| 3: UX & Localization | **Awaiting PM sign-off** | 21 new (253 total) | [ ] |
-| 4: Feature Expansion | Not started | — | — |
-| 5: Monetization | Blocked (external setup) | — | — |
-| 6: Polish & Delight | Not started | — | — |
+| 2: Core Features | **Signed off** | 13 | ✓ |
+| 3: UX & Localization | **Signed off** | 74 | ✓ (253 total) |
+| 4: Feature Expansion | **Complete** | 67 (320 total) | Ready for QA |
+| 5: Infrastructure & Monetization | **In progress** | — | — |
 
----
+## Phase 4 Deliverables
 
-## Phase 3 Deliverables
+| Day | Feature | Tests |
+|-----|---------|-------|
+| 1 | TagCategory model + repo + provider | 17 |
+| 2 | DB migration v16→v17 | 3 |
+| 3 | Settings Tags tab redesign (expandable categories) | 5 |
+| 4 | Bulk tag operations (multi-select, assign, merge, recolor) | 4 |
+| 5 | Tag analytics sub-tab in Tallies | 4 |
+| 6 | Tag auto-suggest in Add Entry | 5 |
+| 7 | Category filter chips in Notes tab | 4 |
+| 8 | Export CSV with date range picker | 3 |
+| 9 | Export PDF with title page, entries, summary | 4 |
+| 10 | Notes share redesign (multi-select, format preview) | 9 |
+| 11-14 | Maestro UAT flows + docs | 69 total |
 
-### Item 6: Language/Localization Audit ✓
-- ARB files: `appName` → `"Stalio"` in both en/zh, 40+ deleted-feature keys removed, 70+ new keys added
-- `AppLocalizations` abstract class + en/zh implementations rewritten with full coverage
-- Inline `isZh ? '中文' : 'English'` replaced with `AppLocalizations.of(context)!` in 8 files:
-  - `home_screen.dart`, `moment_screen.dart`, `add_entry_screen.dart`
-  - `settings_screen.dart`, `routine_screen.dart`
-  - `calendar_widget.dart`, `emoji_jar.dart`, `routine_item.dart`
-- Remaining `isZh` patterns are legitimate boolean passes to model methods (`displayName(isZh)`, `DateFormat` patterns, dialog form labels)
+## Phase 5 Deliverables
 
-### Item 7: Dark Mode Polish ✓
-- Theme persistence via SharedPreferences (`theme_mode` key)
-- System theme follow (`ThemeMode.system`) as third option
-- Theme settings UI in Settings → General with RadioListTile picker
-- Dark theme: navy (#6B8FDE) primary, gold (#E0B84F) accent, dark surfaces (#121212/#0D0D0D/#1E1E1E)
+| Item | Feature | Status |
+|------|---------|--------|
+| 12 | AI dead code cleanup | ✅ Done |
+| 13 | RevenueCat / Purchases cleanup | ✅ Done |
+| 14 | CI/CD pipeline (.github/workflows/ci.yml) | ✅ Done |
+| 15 | Pre-commit hooks | ✅ Done |
+| 16 | Builds protocol (.builds/) | ✅ Done |
+| 17 | Environment configuration | 🔲 Pending |
+| 18 | Code coverage baseline | 🔲 Pending |
+| 19 | Dependabot | 🔲 Pending |
+| 20 | AdMob dependency (google_mobile_ads) | ✅ Dependency added |
+| — | Bundle ID unification → com.orbacetech.stalio | ✅ Done |
+| — | Release keystore (Android AAB signing) | ✅ Done |
+| — | Info.plist privacy strings + encryption decl | ✅ Done |
+| — | AdMob iOS GADApplicationIdentifier | ✅ Done |
+| — | Business decisions record | ✅ Done |
+| — | Gap analysis + automation roadmap | ✅ Done |
 
-### Item 8: iOS Name Cache Fix ✓
-- `CFBundleDisplayName` already `"Stalio"` in Info.plist — no change needed
+## Architecture
 
-### BlinkingApp → StalioApp
-- `lib/app.dart` class renamed `BlinkingApp` → `StalioApp`
-- `lib/main.dart` updated to use `StalioApp`
-- Remaining "Blinking" refs only in dead code (purchases_service, paywall_screen) and DB migrations
-
----
-
-## L10n Architecture
-
+### Provider Tree
 ```
-lib/l10n/
-├── app_en.arb              (163 keys, English source)
-├── app_zh.arb              (163 keys, Chinese source)
-├── app_localizations.dart  (abstract class, 163 getters + delegate)
-├── app_localizations_en.dart (English implementation)
-├── app_localizations_zh.dart (Chinese implementation)
-└── l10n.dart               (Locale list + getLanguageName helper)
+StorageService
+├── EntryProvider       (notes CRUD, search, filter)
+├── RoutineProvider     (habits CRUD, completion, voice scheduling)
+├── TagProvider         (tag CRUD, merge, batch update)
+├── TagCategoryProvider (category CRUD, reorder, delete cascade)
+├── LocaleProvider      (EN/ZH)
+├── ThemeProvider       (light/dark/system)
+├── JarProvider         (emotion aggregation)
+└── SummaryProvider     (chart metrics, tag analytics)
 ```
 
----
+### Storage (SQLite schema v17)
+- entries, tags (with category_id FK), tag_categories, entry_tags, routines, completions
+- Stale tables: ai_identity, lens_sets, ai_call_log, templates, note_cards (Phase 6 cleanup)
 
 ## Maestro UAT Flows
 
-| File | Flows | Covers |
-|------|-------|--------|
-| `test/maestro/phase1_branding.yaml` | 4 | Branding, Stalio name, no Blinking |
-| `test/maestro/phase1_navigation.yaml` | 7 | 5-tab nav, + button, roundtrip |
-| `test/maestro/phase1_smoke.yaml` | 8 | Visual smoke, all tabs, language toggle |
-| `test/maestro/phase2_backup_restore.yaml` | 4 | Backup button, restore dialog, no crash |
-| `test/maestro/phase3_l10n.yaml` | 12 | EN↔ZH toggle, all 5 screens both locales |
-| `test/maestro/phase3_dark_mode.yaml` | 11 | Light/Dark/System, all screens dark mode |
-| **Total** | **46** | |
-
----
+| File | Flows | Phase |
+|------|-------|-------|
+| `phase1_branding.yaml` | 4 | Phase 1 |
+| `phase1_navigation.yaml` | 7 | Phase 1 |
+| `phase1_smoke.yaml` | 8 | Phase 1 |
+| `phase2_backup_restore.yaml` | 4 | Phase 2 |
+| `phase3_l10n.yaml` | 12 | Phase 3 |
+| `phase3_dark_mode.yaml` | 11 | Phase 3 |
+| `phase4_*.yaml` (8 files) | 34 | Phase 4 |
+| **Total** | **80** | |
 
 ## Features
 
 | Feature | Status |
 |---------|--------|
 | My Day — calendar, entries, habit check-in, emoji jar | Full |
-| Moments — note list, search, tag filter, tag chips | Full |
-| Tallies — 3 sub-tabs: Habits, Notes, Moods | Full |
-| Settings — General, Tags, Habit Build | Full |
+| Moments — note list, search, tag/category filter, multi-select share | Full |
+| Tallies — 4 sub-tabs: Habits, Notes, Moods, Tags | Full |
+| Settings — General, Tags (expandable categories), Habit Build | Full |
+| Tag management — CRUD, categories, bulk ops, auto-suggest | Full |
+| Export — CSV + PDF with date range picker | Full |
 | Emoji tracking (emotion picker + jar) | Full |
 | Voice reminders (foreground TTS) | Full |
 | Background notifications (OS-level) | Full |
 | Bilingual UI (EN/ZH) | Full |
 | Streak matrix heatmap | Full |
 | Habit Build (create/edit/toggle with categories) | Full |
-| Tag management (CRUD with color picker) | Full |
-| Seed data (entries + habits + tags) | Full |
-| Backup/Restore UI (ZIP export + restore from file) | Full |
 | Dark mode (light/dark/system with persistence) | Full |
-| Theme provider (SharedPreferences persistence) | Full |
-| AppLocalizations framework (163 keys, fully wired) | Full |
+| Backup/Restore UI (ZIP export + restore from file) | Full |
 
----
+## Removed from Original App
 
-## Removed from Blinking Notes
+Floating AI robot, AI services (LLM, personas, lens sets), RevenueCat/purchases, BYOK, Chorus social, voice transcribe, photo/camera picker, soft prompt, trial banners, paywall, AI Secrets tag, Blinking branding, onboarding transition screen, keepsake cards
 
-Floating AI robot, AI services (LLM, personas, lens sets), IAP/RevenueCat, keepsake cards, onboarding/transition, BYOK, Chorus social, voice transcribe, photo/camera picker, soft prompt, trial banners, paywall, AI Secrets tag, Blinking branding
+## Documents
 
----
-
-## Code Patterns
-
-- `entry_card.dart` — shared by My Day (tag count in header) and Moments (no tag count)
-- `cherished_memory_screen.dart` — Tallies 3-tab implementation (1561 lines, do NOT use edit tool on this file — use sed for precise line-level edits)
-- `routine_screen.dart` — Habits page (single scroll view with today checklist + streak matrix)
-- `settings_screen.dart` — 3 subtabs with initialTab parameter
-- `l10n/` — full AppLocalizations framework, ARB-driven, 163 keys
-
-## Rollback
-
-`git checkout safe-rollback` — last known good state at tag `safe-rollback`
+| Document | Purpose |
+|----------|---------|
+| `docs/STALIO_TEST_PLAN.md` | Test infrastructure + gates + protocol |
+| `docs/UAT_PHASE4.md` | 74 manual UAT test cases |
+| `docs/BUILD_TEST_VC_RULES.md` | Build, test, and version control rules |
+| `docs/GAP_ANALYSIS.md` | 13 gaps + automation roadmap |
+| `docs/BUSINESS_DECISIONS_RECORD.md` | All decisions + AdMob/IAP values |
+| `docs/PHASE5_PLAN.md` | Phase 5 infrastructure + business prerequisites |
+| `lesson_learned_06_10.md` | DB migration checklist |
+| `works_item_0610.md` | Phase 4 work breakdown |
