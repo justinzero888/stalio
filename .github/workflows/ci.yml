@@ -27,4 +27,9 @@ jobs:
           if grep -q 'error •' /tmp/analyze.log; then exit 1; fi
 
       - name: Run tests
-        run: flutter test
+        run: flutter test --coverage
+
+      - name: Check coverage
+        run: |
+          sudo apt-get install -y lcov > /dev/null 2>&1
+          lcov --summary coverage/lcov.info 2>/dev/null | grep lines | head -1
