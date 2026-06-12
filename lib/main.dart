@@ -4,6 +4,8 @@ import 'package:flutter/semantics.dart';
 import 'app.dart';
 import 'core/services/storage_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/ad_service.dart';
+import 'core/services/iap_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,9 @@ void main() async {
   await storageService.init();
 
   await NotificationService.init();
+  await AdService.initialize();
+  await IapService.initialize();
+  IapService.handlePurchaseUpdates();
 
   runApp(StalioApp(storageService: storageService));
 }

@@ -10,7 +10,12 @@ import '../../providers/tag_category_provider.dart';
 import '../../providers/routine_provider.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/services/export_service.dart';
+import '../../core/services/ad_service.dart';
+import '../../core/services/iap_service.dart';
+import '../../core/config/environment.dart';
+import 'dart:io' show Platform;
 import '../../core/services/voice_notification_service.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../../core/constants/legal_content.dart';
 import '../routine/routine_screen.dart';
 
@@ -71,7 +76,13 @@ class _GeneralTab extends StatefulWidget {
 }
 
 class _GeneralTabState extends State<_GeneralTab> {
+  BannerAd? _bannerAd;
+
   @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
   Widget build(BuildContext context) {
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     final storage = context.read<StorageService>();
@@ -164,8 +175,46 @@ class _GeneralTabState extends State<_GeneralTab> {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showLegalSheet(context),
         ),
+        if (!AdService.adsRemoved)
+          _buildBannerAd(isZh),
+        if (!AdService.adsRemoved)
+          ListTile(
+            leading: const Icon(Icons.auto_awesome, color: Colors.amber),
+            title: Text(isZh ? '移除广告' : 'Remove Ads'),
+            subtitle: Text(isZh ? '\$2.99 一次性购买' : '\$2.99 one-time purchase'),
+            onTap: () => _handleRemoveAds(context),
+          ),
       ],
     );
+  }
+
+  Widget _buildBannerAd(bool isZh) {
+    final env = Environment.current;
+    final unitId = Platform.isIOS
+        ? env.adMobBannerUnitIdIos
+        : env.adMobBannerUnitIdAndroid;
+    _bannerAd = AdService.createBanner(unitId);
+    if (_bannerAd == null) return const SizedBox.shrink();
+    _bannerAd?.load();
+    return SizedBox(
+      height: 50,
+      child: AdWidget(ad: _bannerAd!),
+    );
+  }
+
+  Future<void> _handleRemoveAds(BuildContext context) async {
+    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
+    final success = await IapService.buyRemoveAds();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? (isZh ? '广告已移除！' : 'Ads removed!')
+              : (isZh ? '购买失败，请重试' : 'Purchase failed, please try again')),
+        ),
+      );
+      if (success) setState(() {});
+    }
   }
 
   Widget _sectionHeader(String title) {
