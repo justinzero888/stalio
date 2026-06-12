@@ -181,7 +181,7 @@ class _GeneralTabState extends State<_GeneralTab> {
           ListTile(
             leading: const Icon(Icons.auto_awesome, color: Colors.amber),
             title: Text(isZh ? '移除广告' : 'Remove Ads'),
-            subtitle: Text(isZh ? '\$2.99 一次性购买' : '\$2.99 one-time purchase'),
+            subtitle: Text(isZh ? '\$3.99 一次性购买' : '\$3.99 one-time purchase'),
             onTap: () => _handleRemoveAds(context),
           ),
       ],

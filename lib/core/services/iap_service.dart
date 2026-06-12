@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'ad_service.dart';
 
 class IapService {
-  static const _productId = 'zengarden_removeads_v1';
+  static const _productId = 'stalio_removeads_v1';
   static final _iap = InAppPurchase.instance;
   static bool _available = false;
 
