@@ -15,9 +15,9 @@
 [ Daily ]  [ Tallies ]  [ Settings ]
 
 Daily     = Calendar + Habit Checklist (tap habit → note input)
-Tallies   = Sub-tabs: [ Progress ] [ Journal ]
-              Progress = Habit completion charts, streaks, tag analytics
-              Journal  = Search, browse, filter, share habit-generated notes
+Tallies   = Sub-tabs: [ Habits ] [ Notes ]
+              Habits = Habit completion charts, streaks, tag analytics
+              Notes  = Search, browse, filter, share habit-generated notes
 Settings  = Same as before (General, Tags, Habit Build)
 ```
 
@@ -36,19 +36,9 @@ After:  [ Daily ]  [ Tallies ]  [ Settings ]
 
 ---
 
-## Sub-Tab Naming
-
-Tallies has 2 sub-tabs. Options for names:
-
-| Option | Tab 1 | Tab 2 | Rationale |
-|--------|-------|-------|-----------|
-| **A (Recommended)** | **Progress** | **Journal** | Progress = tracking/metrics, Journal = personal record |
-| B | Habits | Notes | Familiar, but "Notes" is too generic |
-| C | Insights | Entries | Insights = charts, Entries = content |
-
-**Recommendation: Option A — Progress & Journal.** Clear semantic distinction. "Progress" is about measurement; "Journal" is about reflection. No overlap with the main "Tallies" tab name.
-
 ---
+
+## Sub-Tab Names (Decided)
 
 ## Item 28: 5-Tab → 3-Tab Navigation
 
@@ -82,17 +72,16 @@ Remove `MomentScreen` from screens list (moved into Tallies).
 **File:** `lib/screens/cherished/cherished_memory_screen.dart`
 
 ```dart
-// OLD: 4 sub-tabs (Habits, Notes, Moods, Tags)
-// NEW: 2 sub-tabs (Progress, Journal)
+// NEW: 2 sub-tabs (Habits, Notes)
 _InsightsContentState:
   DefaultTabController(length: 2, ...)
   TabBar(tabs: [
-    Tab(text: isZh ? '进步' : 'Progress'),
-    Tab(text: isZh ? '日记' : 'Journal'),
+    Tab(text: isZh ? '习惯' : 'Habits'),
+    Tab(text: isZh ? '笔记' : 'Notes'),
   ])
   TabBarView(children: [
-    ProgressTab(summary: summary, isZh: isZh),
-    JournalTab(),
+    HabitsSubTab(summary: summary, isZh: isZh),
+    NotesSubTab(),
   ])
 ```
 
@@ -280,7 +269,7 @@ List<String> _resolveTags(Routine routine) {
 │  │ [Cancel]              [Save & Done] │            │
 │  └──────────────────────────────────────┘            │
 │                                                      │
-│  Tallies → Journal: shows all habit-generated notes   │
+│  Tallies → Notes: shows all habit-generated notes   │
 │  ┌──────────────────────────────────────┐            │
 │  │ Search: [________]  Filter: [Health▾]│            │
 │  ├──────────────────────────────────────┤            │
@@ -313,16 +302,16 @@ List<String> _resolveTags(Routine routine) {
 |------|--------|------------|
 | Navigation | 5→3 tabs: index shifts, MomentScreen moves | Update all nav tests + Maestro flows |
 | Entry creation | Freeform notes gone — all notes from habits | Existing entries preserved, only creation flow changes |
-| Tallies tabs | 4→2 sub-tabs: merge charts into Progress, move notes into Journal | ProgressTab is new file; JournalTab = existing MomentScreen |
+| Tallies tabs | 4→2 sub-tabs: merge charts into Habits, move notes into Notes | ProgressTab is new file; NotesTab = existing MomentScreen |
 | Emotion tracking | Mood jar removed — no mood input | Future: can add mood field to RoutineNoteDialog |
 | Test suite | ~25 tests reference old nav, "+" tab, mood jar | Run full suite after each item |
 | AddEntryScreen | Still exists as code but no longer used from "+" tab | Can be left as dead code or removed |
 
-## Open Decisions
+## Open Decisions — All Resolved June 14, 2026
 
-| Question | Options | Recommendation |
-|----------|---------|----------------|
-| Tallies sub-tab names? | A: Progress + Journal / B: Habits + Notes / C: Insights + Entries | **A: Progress + Journal** |
-| Keep AddEntryScreen code? | Delete / Keep (dead) | Delete — reduces bundle size |
-| Calendar on Daily? | Keep / Remove | Keep ✅ (confirmed) |
-| JarProvider? | Keep for future / Delete | Keep (may repurpose for streak animations) |
+| Question | Decision |
+|----------|----------|
+| Tallies sub-tab names? | **Habits** (habit statistics, completion charts, streaks) + **Notes** (notes content, search, filter by tag/category) |
+| Keep AddEntryScreen code? | Keep for now — may repurpose in future |
+| Keep JarProvider? | Keep for now — may repurpose for streak animations |
+| Calendar on Daily? | Yes ✅ |
