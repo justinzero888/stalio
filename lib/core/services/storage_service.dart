@@ -59,6 +59,14 @@ class StorageService {
       }
     }
 
+    // Initialize default tag categories if none exist
+    final categories = await getTagCategories();
+    if (categories.isEmpty) {
+      for (final cat in _getDefaultCategories()) {
+        await addTagCategory(cat);
+      }
+    }
+
     // Seed demo entries for validation
     final entries = await getEntries();
     if (entries.isEmpty) {
@@ -132,6 +140,21 @@ class StorageService {
       Routine(id: 'routine_seed_29', name: '联系一位朋友', nameEn: 'Reach out to a friend', icon: '💬', frequency: RoutineFrequency.weekly, isActive: false, reminderTime: '10:00', scheduledDaysOfWeek: [6], description: '没有刻意的联系，友谊会慢慢淡了。', descriptionEn: 'Friendships drift without intentional contact.', category: RoutineCategory.connection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
       Routine(id: 'routine_seed_30', name: '陪伴爱人', nameEn: 'Quality time with partner', icon: '❤️', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '18:30', description: '日常的用心陪伴，比偶尔的盛大表达更能维持长久的关系。', descriptionEn: 'Daily intentional presence predicts long-term satisfaction more than grand gestures.', category: RoutineCategory.connection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
       Routine(id: 'routine_seed_31', name: '专心陪孩子', nameEn: 'Be present with kids', icon: '👶', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '18:00', description: '孩子记住的是陪伴本身，而非具体在做什么。多数父母需要的提醒，是「停下工作」。', descriptionEn: 'Children remember presence more than activities. Most parents need a reminder to stop working.', category: RoutineCategory.connection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+    ];
+  }
+
+  List<TagCategory> _getDefaultCategories() {
+    final now = DateTime.now();
+    return [
+      TagCategory(id: 'cat_health', name: '养', nameEn: 'Health', color: '#34C759', icon: '💊', sortOrder: 0, createdAt: now),
+      TagCategory(id: 'cat_fitness', name: '劲', nameEn: 'Fitness', color: '#FF9500', icon: '🏃', sortOrder: 1, createdAt: now),
+      TagCategory(id: 'cat_nutrition', name: '食', nameEn: 'Nutrition', color: '#FF3B30', icon: '🥗', sortOrder: 2, createdAt: now),
+      TagCategory(id: 'cat_sleep', name: '息', nameEn: 'Sleep', color: '#5856D6', icon: '😴', sortOrder: 3, createdAt: now),
+      TagCategory(id: 'cat_mindfulness', name: '心', nameEn: 'Mindfulness', color: '#AF52DE', icon: '🧘', sortOrder: 4, createdAt: now),
+      TagCategory(id: 'cat_reflection', name: '省', nameEn: 'Reflection', color: '#007AFF', icon: '💭', sortOrder: 5, createdAt: now),
+      TagCategory(id: 'cat_restraint', name: '戒', nameEn: 'Restraint', color: '#FF2D55', icon: '🛡️', sortOrder: 6, createdAt: now),
+      TagCategory(id: 'cat_connection', name: '缘', nameEn: 'Connection', color: '#FF9500', icon: '👥', sortOrder: 7, createdAt: now),
+      TagCategory(id: 'cat_other', name: '杂', nameEn: 'Other', color: '#9E9E9E', icon: '⭐', sortOrder: 8, createdAt: now),
     ];
   }
 

@@ -5,7 +5,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzData;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/routine.dart';
-import 'voice_notification_service.dart';
 
 /// Local-only notification service tied to routine reminders.
 /// Zero data leaves the device — fully aligned with privacy claim.

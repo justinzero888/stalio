@@ -1,5 +1,4 @@
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'ad_service.dart';
 
 class IapService {
