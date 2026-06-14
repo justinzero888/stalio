@@ -2,8 +2,9 @@
 
 > **Date:** June 13, 2026  
 > **Pre-requisite:** Phase 5 UAT sign-off  
-> **Est. Effort:** 5–7 days  
-> **Target:** Production-ready codebase
+> **Est. Effort:** 6–8 days  
+> **Target:** Production-ready codebase  
+> **Clarifications from business owner:** (1) Category consistency — use habit categories as base for tag categories; language should use standard locale. (2) Firebase is NOT being decommissioned; Crashlytics is free on Spark tier.
 
 ---
 
@@ -249,6 +250,17 @@ Any asset directory with zero references → remove from pubspec + delete direct
 
 Production crashes are currently invisible. Firebase Crashlytics provides real-time crash reporting with stack traces, device info, and user impact metrics.
 
+### Firebase Cost Analysis
+
+**Firebase is NOT being decommissioned** — actively maintained with new features (AI assistance in Crashlytics added recently). Deprecation rumors are false.
+
+| Plan | Monthly Cost | Crashlytics | Credit Card Required |
+|------|-------------|-------------|---------------------|
+| Spark (Free) | $0 | ✅ Unlimited | No |
+| Blaze (Pay-as-you-go) | Usage-based | ✅ Unlimited | Yes |
+
+**Recommendation:** Proceed with Spark (free) plan. Zero cost risk. No upgrades needed unless other Firebase services exceed free limits (unlikely for Stalio's usage profile — Crashlytics has no usage limits at all).
+
 ### Implementation Plan
 
 **Step 1 — Add Firebase packages**
@@ -365,6 +377,83 @@ Record in `PROJECT_STATUS.md` Performance section:
 
 ---
 
+## Item 27: Category Consistency — Unify Habit & Tag Categories `[Priority #6]`
+
+### Design Intent
+
+Currently, habit categories (`RoutineCategory` enum: Health, Fitness, Nutrition, Sleep, Mindfulness, Reflection, Restraint, Connection, Other) and tag categories (user-created freeform) are separate systems with different naming, icons, and localization patterns. For consistency, tag categories should use the same 9 categories as defaults, with proper AppLocalizations instead of hardcoded `isZh` ternaries.
+
+### Current State
+
+| Aspect | Habit Categories | Tag Categories |
+|--------|-----------------|----------------|
+| Source | `RoutineCategory` enum (9 values) | User-created via TagCategory model |
+| Icons | `kCategoryEmoji` map (emoji per category) | User-picked in dialog |
+| Colors | Fixed per category | User-picked in dialog |
+| Localization | `routineCategoryName(cat, isZh)` function | `TagCategory.displayName(isZh)` method |
+| Labels | Short single-character ZH (养/劲/食/息/心/省/戒/缘/杂) | User-entered freeform |
+
+### Changes
+
+**Step 1 — Pre-seed default tag categories**
+
+On fresh install, create 9 default `TagCategory` entries matching habit categories:
+
+```dart
+// lib/providers/tag_category_provider.dart
+static const defaultCategories = [
+  (id: 'cat_health', name: '养', nameEn: 'Health', color: '#34C759', icon: '💊'),
+  (id: 'cat_fitness', name: '劲', nameEn: 'Fitness', color: '#FF9500', icon: '🏃'),
+  (id: 'cat_nutrition', name: '食', nameEn: 'Nutrition', color: '#FF3B30', icon: '🥗'),
+  (id: 'cat_sleep', name: '息', nameEn: 'Sleep', color: '#5856D6', icon: '😴'),
+  (id: 'cat_mindfulness', name: '心', nameEn: 'Mindfulness', color: '#AF52DE', icon: '🧘'),
+  (id: 'cat_reflection', name: '省', nameEn: 'Reflection', color: '#007AFF', icon: '💭'),
+  (id: 'cat_restraint', name: '戒', nameEn: 'Restraint', color: '#FF2D55', icon: '🛡️'),
+  (id: 'cat_connection', name: '缘', nameEn: 'Connection', color: '#FF9500', icon: '👥'),
+  (id: 'cat_other', name: '杂', nameEn: 'Other', color: '#9E9E9E', icon: '⭐'),
+];
+```
+
+**Step 2 — Add AppLocalizations for category add/edit dialog**
+
+Replace all hardcoded `isZh ? '添加分类' : 'Add Category'` in `settings_screen.dart` with proper ARB keys:
+
+| Key | EN | ZH |
+|-----|----|----|
+| `categoryName` | Category name | 分类名称 |
+| `categoryEnglishName` | English name | 英文名称 |
+| `categoryIcon` | Icon (emoji) | 图标 |
+| `addCategory` | Add Category | 添加分类 |
+| `editCategory` | Edit Category | 编辑分类 |
+| `deleteCategory` | Delete Category | 删除分类 |
+| `deleteCategoryConfirm` | Delete "{name}"? Tags in this category will become uncategorized. | 确定删除"{name}"？所属标签将变为未分类。 |
+
+Add keys to `app_en.arb`, `app_zh.arb`, regenerate `app_localizations.dart`.
+
+**Step 3 — Update dialog code**
+
+Replace all `isZh ?` ternaries in `_showAddCategoryDialog`, `_showEditCategoryDialog`, `_showDeleteCategoryDialog` with `AppLocalizations.of(context)!.xxx`.
+
+**Step 4 — Seed default categories on first launch**
+
+In `lib/core/services/storage_service.dart` `init()`: if no tag categories exist, create the 9 defaults.
+
+**Step 5 — Migration for existing users**
+
+Users who already have custom-created categories keep them as-is. Only new installs get the 9 defaults. No migration needed (existing data preserved).
+
+### Acceptance Criteria
+- [ ] 9 default tag categories created on fresh install
+- [ ] Category add/edit/delete dialogs use AppLocalizations (zero `isZh` ternaries)
+- [ ] `hardcoded_string_audit_test` for `settings_screen.dart` moved to `phase4Files` then to `fullyLocalizedFiles` after cleanup
+- [ ] Existing user categories unaffected
+- [ ] 320 tests pass
+
+### Risk
+- **Low.** Changes are additive (new defaults, new l10n keys). No migration needed. Existing data preserved.
+
+---
+
 ## Phase 6 Task Breakdown
 
 | Day | Item | Task | Effort |
@@ -375,7 +464,8 @@ Record in `PROJECT_STATUS.md` Performance section:
 | 3 | 23b | Extract _NotesTab + _MoodsTab | 1.5h |
 | 3 | 23c | Extract _HeroStatsRow + clean up | 1h |
 | 4 | 24 | Dead asset & import cleanup | 1h |
-| 5 | 25 | Firebase Crashlytics integration | 3h |
+| 4 | 27 | Category consistency (unify habit + tag categories, l10n) | 2h |
+| 5 | 25 | Firebase Crashlytics integration (Spark plan) | 3h |
 | 6 | — | Regression QA | 2h |
 
 ---
@@ -389,6 +479,7 @@ Record in `PROJECT_STATUS.md` Performance section:
 | 24 (Asset cleanup) | None | Ready |
 | 25 (Crashlytics) | Firebase project creation by business owner | Needs `google-services.json` + `GoogleService-Info.plist` |
 | 26 (Perf baseline) | None | Ready |
+| 27 (Category consistency) | None | Ready |
 
 ---
 
