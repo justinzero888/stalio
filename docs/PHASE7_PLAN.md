@@ -275,11 +275,28 @@ void _saveNote() {
 | Test suite | ~20 tests reference "My Day" text or "+" tab | Run full suite after each item |
 | Maestro flows | 8 flows reference "+" or mood jar screens | Update flows after all UI changes |
 
-## Open Questions for Business Owner
+## Open Questions — Answered June 14, 2026
 
-| Question | Options |
-|----------|---------|
-| Should Tallies keep the 3-tab structure (Habits, Notes, Moods → Tags) or simplify further? | Keep 3 tabs / Reduce to 2 |
-| Should habit notes appear in the Notes tab browse list? | Yes (auto-tagged) / No (only in habit history) |
-| Should writing habits like "Write gratitude" still be togglable without writing (if user skips)? | No (must write) / Yes (skip allowed with note) |
-| Should the calendar widget on Daily stay? | Yes / Remove |
+| Question | Answer |
+|----------|--------|
+| Tallies tab simplification options? | See options below — 3 alternatives for business decision |
+| Should habit notes appear in Notes tab browse list? | **Yes** — auto-tagged with habit name + category |
+| Can writing habits be skipped (no text)? | **No** — habit cannot be checked without writing |
+| Keep calendar widget on Daily? | **Yes** — keep calendar |
+
+### Tallies Options
+
+**Option A — Keep 4 tabs (status quo):**
+Habits | Notes | Moods | Tags. Most data, most complexity.
+
+**Option B — Merge to 2 tabs:**
+Habits (completion + streak + tags) | Notes (writing stats + top tags). Drop Moods tab (mood jar already removed, mood chart data can fold into Habits).
+
+**Option C — Single scrollable view:**
+All charts on one scrollable page with section headers. No sub-tabs. Simplest UX.
+
+| Option | Tabs | Complexity | Data Loss | Recommendation |
+|--------|------|-----------|-----------|----------------|
+| A | 4 | High | None | Safe, but cluttered |
+| B | 2 | Medium | Mood chart data hidden | **Recommended** — cleaner |
+| C | 1 | Low | Mood chart data hidden | Simplest, may feel sparse |
