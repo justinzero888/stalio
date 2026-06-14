@@ -8,6 +8,9 @@ import '../../providers/summary_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/tag_category_provider.dart';
 import 'tag_analytics_tab.dart';
+import 'tallies/habits_tab.dart';
+import 'tallies/notes_tab.dart';
+import 'tallies/moods_tab.dart';
 import '../../providers/jar_provider.dart';
 import '../../widgets/emoji_jar.dart';
 import '../../providers/entry_provider.dart';
@@ -59,73 +62,18 @@ class _InsightsContentState extends State<_InsightsContent> {
       _HeroStatsRow(summary: summary, isZh: isZh),
       TabBar(tabs: [Tab(text: isZh?'Habits':'Habits'),Tab(text: isZh?'Notes':'Notes'),Tab(text: isZh?'Moods':'Moods'),Tab(text: isZh?'Tags':'Tags')]),
       Expanded(child: TabBarView(children: [
-        _HabitsTab(summary: summary, isZh: isZh),
-        _NotesTab(summary: summary, isZh: isZh),
-        _MoodsTab(summary: summary, years: years, isZh: isZh), TagAnalyticsTab(summary: summary, isZh: isZh),
+        HabitsTab(summary: summary, isZh: isZh),
+        NotesTab(summary: summary, isZh: isZh),
+        MoodsTab(summary: summary, years: years, isZh: isZh),
+        TagAnalyticsTab(summary: summary, isZh: isZh),
       ])),
     ]));
   }
 }
 
-class _HabitsTab extends StatelessWidget {
-  final SummaryProvider summary; final bool isZh;
-  const _HabitsTab({required this.summary, required this.isZh});
-  @override
-  Widget build(BuildContext context) {
-    final p = context.watch<RoutineProvider>();
-    final active = p.routines.where((r) => r.isActive).toList();
-    int best = 0;
-    for (final r in active) { if (r.streak > best) best = r.streak; }
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
-      _SectionCard(title: isZh?'Habit Stats':'Habit Stats', child: SizedBox(height: 110, child: Row(children: [
-        Expanded(child: _MiniStatCard(icon: Icons.checklist, value: '${p.routines.length}', label: isZh?'Total':'Total')),
-        const SizedBox(width: 8),
-        Expanded(child: _MiniStatCard(icon: Icons.local_fire_department, value: '$best${isZh?"d":"d"}', label: isZh?'Best Streak':'Best Streak')),
-        const SizedBox(width: 8),
-        Expanded(child: _MiniStatCard(icon: Icons.play_circle, value: '${active.length}', label: isZh?'Active':'Active')),
-      ]))),
-      if (active.isNotEmpty) ...[const SizedBox(height: 24), _StreakMatrixSection(routines: active)],
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Habit Completion':'Habit Completion', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _RoutineCompletionChart(provider: summary)),
-    ]);
-  }
 }
 
-class _NotesTab extends StatelessWidget {
-  final SummaryProvider summary; final bool isZh;
-  const _NotesTab({required this.summary, required this.isZh});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
-      _SectionCard(title: isZh?'Writing Stats':'Writing Stats', child: _WritingStatsSection(summary: summary, isZh: isZh)),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Writing Activity':'Writing Activity', trailing: summary.totalEntries>0?Text('${summary.totalEntries} ${isZh?"entries":"entries"}',style:TextStyle(color:Colors.grey[400],fontSize:12)):null, child: _CalendarHeatmap(entriesPerDay: summary.entriesPerDay)),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Notes Trend':'Notes Trend', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _NoteCountChart(provider: summary)),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Checklist Insights':'Checklist Insights', child: _ChecklistInsightsSection(summary: summary, isZh: isZh)),
-    ]);
-  }
-}
-
-class _MoodsTab extends StatelessWidget {
-  final SummaryProvider summary; final List<int> years; final bool isZh;
-  const _MoodsTab({required this.summary, required this.years, required this.isZh});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
-      _EmojiJarSection(years: years, isZh: isZh),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Mood Distribution':'Mood Distribution', child: _MoodDistributionChart(moodDistribution: summary.moodDistribution)),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Mood Trend':'Mood Trend', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _EmotionTrendChart(provider: summary)),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Tag Impact on Mood':'Tag Impact on Mood', child: _TagMoodSection(summary: summary, isZh: isZh)),
-    ]);
-  }
-}
-
-class _StreakMatrixSection extends StatelessWidget {
+class StreakMatrixSection extends StatelessWidget {
   final List<Routine> routines;
   const _StreakMatrixSection({required this.routines});
   @override
@@ -161,7 +109,7 @@ extension _ on BuildContext {
   ThemeData theme() => Theme.of(this);
 }
 
-class _HeroStatsRow extends StatelessWidget {
+class HeroStatsRow extends StatelessWidget {
   final SummaryProvider summary;
   final bool isZh;
 
@@ -560,7 +508,7 @@ class _CalendarHeatmap extends StatelessWidget {
   }
 }
 
-class _MoodDistributionChart extends StatelessWidget {
+class MoodDistributionChart extends StatelessWidget {
   final Map<String, int> moodDistribution;
 
   const _MoodDistributionChart({required this.moodDistribution});
@@ -744,41 +692,6 @@ class _EmojiJarSection extends StatelessWidget {
     ),
   ));
   }}
-class _TrendCharts extends StatelessWidget {
-  const _TrendCharts();
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<SummaryProvider>();
-    final l = AppLocalizations.of(context)!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionTitle(title: l.summaryNoteCount),
-        const SizedBox(height: 8),
-        _NoteCountChart(provider: provider),
-        const SizedBox(height: 24),
-
-        _SectionTitle(title: l.summaryHabitCompletion),
-        const SizedBox(height: 8),
-        _RoutineCompletionChart(provider: provider),
-        const SizedBox(height: 24),
-
-        _SectionTitle(title: l.summaryMoodTrend),
-        const SizedBox(height: 8),
-        _EmotionTrendChart(provider: provider),
-        const SizedBox(height: 24),
-
-        _SectionTitle(title: l.summaryTopTags),
-        const SizedBox(height: 8),
-        _TopTagsChart(provider: provider),
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-}
-
 class _ScopePicker extends StatelessWidget {
   final SummaryScope scope;
   final void Function(SummaryScope) onChanged;
@@ -832,7 +745,7 @@ class _ScopeChip extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
+class SectionTitle extends StatelessWidget {
   final String title;
   const _SectionTitle({required this.title});
 
@@ -848,7 +761,7 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _NoteCountChart extends StatelessWidget {
+class NoteCountChart extends StatelessWidget {
   final SummaryProvider provider;
   const _NoteCountChart({required this.provider});
 
@@ -936,7 +849,7 @@ class _NoteCountChart extends StatelessWidget {
   }
 }
 
-class _RoutineCompletionChart extends StatelessWidget {
+class RoutineCompletionChart extends StatelessWidget {
   final SummaryProvider provider;
   const _RoutineCompletionChart({required this.provider});
 
@@ -1024,7 +937,7 @@ class _RoutineCompletionChart extends StatelessWidget {
   }
 }
 
-class _EmotionTrendChart extends StatelessWidget {
+class EmotionTrendChart extends StatelessWidget {
   final SummaryProvider provider;
   const _EmotionTrendChart({required this.provider});
 
@@ -1127,7 +1040,7 @@ class _EmotionTrendChart extends StatelessWidget {
   }
 }
 
-class _TopTagsChart extends StatelessWidget {
+class TopTagsChart extends StatelessWidget {
   final SummaryProvider provider;
   const _TopTagsChart({required this.provider});
 
@@ -1235,7 +1148,7 @@ Color _parseHexColor(String hex) {
   return Color(int.parse(hex, radix: 16));
 }
 
-class _WritingStatsSection extends StatelessWidget {
+class WritingStatsSection extends StatelessWidget {
   final SummaryProvider summary;
   final bool isZh;
 
@@ -1351,7 +1264,7 @@ class _MiniStatCard extends StatelessWidget {
   }
 }
 
-class _ChecklistInsightsSection extends StatelessWidget {
+class ChecklistInsightsSection extends StatelessWidget {
   final SummaryProvider summary;
   final bool isZh;
 
@@ -1455,7 +1368,7 @@ class _ChecklistInsightsEmpty extends StatelessWidget {
   }
 }
 
-class _TagMoodSection extends StatelessWidget {
+class TagMoodSection extends StatelessWidget {
   final SummaryProvider summary;
   final bool isZh;
 
@@ -1566,7 +1479,7 @@ class _TagMoodEmpty extends StatelessWidget {
   }
 }
 
-class _EmptyChart extends StatelessWidget {
+class EmptyChart extends StatelessWidget {
   const _EmptyChart();
 
   @override
