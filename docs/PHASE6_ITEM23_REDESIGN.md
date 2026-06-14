@@ -133,61 +133,9 @@ tallies/moods_tab.dart        ← part of cherished_memory;
 
 ---
 
-## Recommendation
+## Decision (June 14, 2026)
 
-**Option B (`part`/`part of`) for immediate safety, with migration path to Option A.**
-
-1. **Now (30 min):** Use Option B to split the file safely using `part`. Zero class renames, zero import changes. The sed-only constraint is lifted immediately.
-
-2. **Later (Phase 7):** Convert to Option A when adding new features. The `part` files can be promoted to standalone libraries with proper imports. This is a natural refactoring path — no urgency.
-
-**Why not Option A directly:** It requires making ~20 classes public and managing imports across files. The previous attempt (which was essentially Option A) resulted in 93 errors. Option B avoids all visibility changes.
-
-**Why not Option C:** The file is already 1609 lines and will grow. The sed-only constraint already caused one catastrophic edit (git checkout reverting 4 days of work). Deferring makes it worse.
+**Option C selected — defer to Phase 7.** Option B adds temporary `part`-file abstraction that must be migrated later. The sed-only constraint has proven manageable (Phases 3-8 edited this file successfully). Phase 7 will implement Option A (proper widget library extraction) when new chart features justify the effort. Phase 6's only remaining edit to this file is dead code removal (~30 lines deleted).
 
 ---
 
-## Implementation Plan (Option B)
-
-**Step 1 — Add library declaration (line 1)**
-```dart
-library cherished_memory;
-```
-
-**Step 2 — Extract classes to part files using sed**
-```bash
-# Extract chart classes (lines 128-746)
-sed -n '128,746p' cherished_memory_screen.dart > tallies/charts.dart
-
-# Extract shared helpers (lines 164-816 — overlapping, careful)
-# ... split by class boundaries
-
-# Extract tab shells (lines 70-127)
-sed -n '70,127p' cherished_memory_screen.dart > tallies/tabs.dart
-```
-
-**Step 3 — Add `part of` headers**
-```bash
-sed -i '' '1i\part of cherished_memory;' tallies/charts.dart
-sed -i '' '1i\part of cherished_memory;' tallies/shared.dart
-sed -i '' '1i\part of cherished_memory;' tallies/tabs.dart
-```
-
-**Step 4 — Add `part` declarations to main file**
-```dart
-part 'tallies/charts.dart';
-part 'tallies/shared.dart';
-part 'tallies/tabs.dart';
-```
-
-**Step 5 — Remove dead classes**
-Delete `_TrendCharts` (lines 747-781), `_ChecklistInsightsEmpty`, `_ChecklistStatRow`, `_TagMoodEmpty`.
-
-**Step 6 — Verify**
-```bash
-flutter analyze lib/screens/cherished/ --no-pub  # 0 errors
-flutter test  # 323 pass
-wc -l lib/screens/cherished/cherished_memory_screen.dart  # < 300
-```
-
-**Effort:** 30–60 minutes. Risk: Low (zero class renames).
