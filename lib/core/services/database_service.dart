@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/models.dart';
 
 class DatabaseService {
-  static const int kSchemaVersion = 17;
+  static const int kSchemaVersion = 18;
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
@@ -292,6 +292,19 @@ class DatabaseService {
         await db.execute('ALTER TABLE tags ADD COLUMN category_id TEXT');
       }
     }
+    if (oldVersion < 18) {
+      // Drop stale tables inherited from Blinking Notes (card system, AI features)
+      // Zero Dart code references — confirmed safe to drop
+      await db.execute('DROP TABLE IF EXISTS ai_identity');
+      await db.execute('DROP TABLE IF EXISTS lens_sets');
+      await db.execute('DROP TABLE IF EXISTS active_lens_set');
+      await db.execute('DROP TABLE IF EXISTS ai_call_log');
+      await db.execute('DROP TABLE IF EXISTS trial_milestones');
+      await db.execute('DROP TABLE IF EXISTS note_card_entries');
+      await db.execute('DROP TABLE IF EXISTS note_cards');
+      await db.execute('DROP TABLE IF EXISTS card_folders');
+      await db.execute('DROP TABLE IF EXISTS templates');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -387,85 +400,7 @@ class DatabaseService {
         notes TEXT,
         FOREIGN KEY (routine_id) REFERENCES routines (id) ON DELETE CASCADE
       )
-    ''');
-
-    // Card folders table
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS card_folders (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        icon TEXT NOT NULL,
-        is_default INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL
-      )
-    ''');
-
-    // Templates table
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS templates (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        name_en TEXT,
-        icon TEXT NOT NULL,
-        font_family TEXT NOT NULL DEFAULT 'default',
-        font_color TEXT NOT NULL DEFAULT '#222222',
-        bg_color TEXT NOT NULL DEFAULT '#FFFFFF',
-        is_built_in INTEGER NOT NULL DEFAULT 0,
-        custom_image_path TEXT,
-        source_template_id TEXT,
-        created_at TEXT NOT NULL,
-        layout TEXT NOT NULL DEFAULT 'hero_image',
-        accent_color TEXT,
-        text_area_opacity REAL NOT NULL DEFAULT 0.85,
-        text_backdrop_color TEXT,
-        footer_text TEXT DEFAULT 'Blinking Notes',
-        show_mood INTEGER NOT NULL DEFAULT 1,
-        show_date INTEGER NOT NULL DEFAULT 1,
-        show_tags INTEGER NOT NULL DEFAULT 1,
-        show_footer INTEGER NOT NULL DEFAULT 1,
-        corner_style TEXT NOT NULL DEFAULT 'rounded',
-        decoration_style TEXT,
-        background_image_path TEXT,
-        text_padding_top REAL NOT NULL DEFAULT 120,
-        text_padding_bottom REAL NOT NULL DEFAULT 140,
-        text_padding_left REAL NOT NULL DEFAULT 80,
-        text_padding_right REAL NOT NULL DEFAULT 80,
-        base_font_size REAL NOT NULL DEFAULT 72,
-        font_weight_value INTEGER NOT NULL DEFAULT 500,
-        text_align_mode TEXT NOT NULL DEFAULT 'center'
-      )
-    ''');
-
-    // Note cards table
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS note_cards (
-        id TEXT PRIMARY KEY,
-        template_id TEXT NOT NULL,
-        folder_id TEXT NOT NULL,
-        rendered_image_path TEXT,
-        ai_summary TEXT,
-        rich_content TEXT,
-        card_content TEXT,
-        emotion TEXT,
-        display_tags TEXT,
-        show_mood INTEGER NOT NULL DEFAULT 1,
-        show_date INTEGER NOT NULL DEFAULT 1,
-        show_tags INTEGER NOT NULL DEFAULT 1,
-        show_footer INTEGER NOT NULL DEFAULT 1,
-        template_overrides TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    ''');
-
-    // Note card entries (many-to-many)
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS note_card_entries (
-        card_id TEXT NOT NULL,
-        entry_id TEXT NOT NULL,
-        PRIMARY KEY (card_id, entry_id)
-      )
-    ''');
+    '''    );
 
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at)',
@@ -479,55 +414,6 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_entry_tags_entry_id ON entry_tags(entry_id)',
     );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_note_card_entries_card_id ON note_card_entries(card_id)',
-    );
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS ai_identity (
-        id INTEGER PRIMARY KEY DEFAULT 1,
-        avatar_emoji TEXT NOT NULL DEFAULT '\u2726',
-        avatar_image_path TEXT,
-        assistant_name TEXT NOT NULL DEFAULT 'Companion',
-        personality_string TEXT NOT NULL DEFAULT 'Warm and grounded.',
-        updated_at TEXT NOT NULL
-      )
-    ''');
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS lens_sets (
-        id TEXT PRIMARY KEY,
-        label TEXT NOT NULL,
-        lens_1 TEXT NOT NULL,
-        lens_2 TEXT NOT NULL,
-        lens_3 TEXT NOT NULL,
-        is_builtin INTEGER NOT NULL DEFAULT 0,
-        sort_order INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL
-      )
-    ''');
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS active_lens_set (
-        id INTEGER PRIMARY KEY DEFAULT 1,
-        lens_set_id TEXT NOT NULL,
-        activated_at TEXT NOT NULL,
-        FOREIGN KEY (lens_set_id) REFERENCES lens_sets(id)
-      )
-    ''');
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS ai_call_log (
-        id TEXT PRIMARY KEY,
-        surface TEXT NOT NULL,
-        called_at TEXT NOT NULL,
-        mood_log_id TEXT,
-        kept INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS trial_milestones (
-        milestone TEXT PRIMARY KEY,
-        shown_at TEXT
-      )
-    ''');
   }
 
   /// Perform data migration from SharedPreferences to SQLite if needed
