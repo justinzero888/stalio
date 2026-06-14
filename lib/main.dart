@@ -13,14 +13,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await Firebase.initializeApp(
-      options: FirebaseOptions(
-        apiKey: 'AIzaSyANONYMOUS_PLACEHOLDER_KEY',
-        appId: '1:000000000000:ios:0000000000000000000000',
-        messagingSenderId: '000000000000',
-        projectId: 'stalio-app',
-      ),
-    );
+    await Firebase.initializeApp();
     FlutterError.onError = (error) {
       FirebaseCrashlytics.instance.recordFlutterFatalError(error);
     };
