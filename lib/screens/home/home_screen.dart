@@ -10,6 +10,7 @@ import '../../models/routine.dart';
 import '../../models/entry.dart';
 import '../../widgets/calendar_widget.dart';
 import '../../widgets/entry_card.dart';
+import '../../widgets/routine_note_dialog.dart';
 import '../moment/entry_detail_screen.dart';
 import '../settings/settings_screen.dart';
 import '../add_entry_screen.dart';
@@ -404,8 +405,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         onTap: readOnly
             ? null
-            : () {
-                context.read<RoutineProvider>().toggleComplete(routine.id, date: _selectedDate);
+            : () async {
+                await showDialog(
+                  context: context,
+                  builder: (_) => RoutineNoteDialog(routine: routine, date: _selectedDate),
+                );
               },
       ),
     );
