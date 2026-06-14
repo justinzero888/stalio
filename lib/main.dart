@@ -12,15 +12,25 @@ import 'core/services/iap_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp();
-
-  FlutterError.onError = (error) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(error);
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+  try {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: 'AIzaSyANONYMOUS_PLACEHOLDER_KEY',
+        appId: '1:000000000000:ios:0000000000000000000000',
+        messagingSenderId: '000000000000',
+        projectId: 'stalio-app',
+      ),
+    );
+    FlutterError.onError = (error) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(error);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  } catch (e) {
+    debugPrint('Firebase init skipped: $e');
+  }
 
   if (kDebugMode || kProfileMode) {
     SemanticsBinding.instance.ensureSemantics();
