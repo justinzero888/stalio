@@ -5,7 +5,6 @@ import '../../../providers/summary_provider.dart';
 import '../../../providers/tag_provider.dart';
 import '../../../providers/tag_category_provider.dart';
 import '../../../models/tag.dart';
-import '../../../models/tag_category.dart';
 
 class TagAnalyticsTab extends StatelessWidget {
   final SummaryProvider summary;

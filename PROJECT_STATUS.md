@@ -1,18 +1,29 @@
 # Stalio — Project Status
 
-> Stalio: Do. Tally. Grow. v1.0.0+5. Last updated: June 10, 2026
+> Stalio: Do. Tally. Grow. v1.0.0+8. Last updated: June 14, 2026
 
 ## Build
 
 | Metric | Status |
 |--------|--------|
-| `flutter analyze` | 0 errors, 134 pre-existing warnings |
-| `flutter test` | 320 tests pass, exit 0 |
+| `flutter analyze` | 0 errors, 130 pre-existing warnings |
+| `flutter test` | 323 tests pass, exit 0 |
 | GitHub CI | ✅ Green (analyze + test on push) |
 | Pre-commit hook | `scripts/pre-commit.sh` (analyze + test + secret scan) |
+| Firebase Crashlytics | ✅ Integrated (Free Spark plan) |
 | iPhone 17 Pro | Running |
 | iPad Air 11" M4 | Running |
 | Android API 36 | Running |
+
+## Performance Baseline
+
+| Metric | Value | Date |
+|--------|-------|------|
+| AAB size (release) | 57 MB | June 13, 2026 |
+| IPA size | 30 MB | June 13, 2026 |
+| Cold start (Android emulator) | ~2s | Known |
+| DB schema tables | 6 core (down from 15) | June 13, 2026 |
+| Dead asset savings | ~10 MB removed | June 13, 2026 |
 
 ## App Identity
 

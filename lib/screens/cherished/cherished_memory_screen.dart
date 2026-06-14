@@ -6,13 +6,10 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/summary_provider.dart';
 import '../../providers/tag_provider.dart';
-import '../../providers/tag_category_provider.dart';
 import 'tag_analytics_tab.dart';
 import '../../providers/jar_provider.dart';
 import '../../widgets/emoji_jar.dart';
-import '../../providers/entry_provider.dart';
 import '../../providers/routine_provider.dart';
-import '../../models/entry.dart';
 import '../../models/routine.dart';
 import '../../models/tag.dart';
 
