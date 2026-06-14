@@ -6,12 +6,10 @@ import 'dart:convert';
 import '../../providers/routine_provider.dart';
 import '../../providers/entry_provider.dart';
 import '../../providers/locale_provider.dart';
-import '../../providers/jar_provider.dart';
 import '../../models/routine.dart';
 import '../../models/entry.dart';
 import '../../widgets/calendar_widget.dart';
 import '../../widgets/entry_card.dart';
-import '../../widgets/emoji_jar.dart';
 import '../moment/entry_detail_screen.dart';
 import '../settings/settings_screen.dart';
 import '../add_entry_screen.dart';
@@ -352,15 +350,6 @@ class _HomeScreenState extends State<HomeScreen> {
           )),
         ],
 
-        // Emoji Jar Section — show when there are entries for the day
-        if (dayListEntries.isNotEmpty || dayNoteEntries.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          _EmojiJarSection(
-            date: _selectedDate,
-            canUseAI: true,
-          ),
-        ],
-
         // Empty State
         if (dayListEntries.isEmpty && dayNoteEntries.isEmpty && dayRoutines.isEmpty)
           Center(
@@ -536,107 +525,6 @@ class _OnboardingBanner extends StatelessWidget {
               child: Icon(Icons.close, size: 18, color: primaryColor),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Collapsible mood jar section with AI reflection button
-class _EmojiJarSection extends StatefulWidget {
-  final DateTime date;
-  final bool canUseAI;
-  const _EmojiJarSection({required this.date, required this.canUseAI});
-
-  @override
-  State<_EmojiJarSection> createState() => _EmojiJarSectionState();
-}
-
-class _EmojiJarSectionState extends State<_EmojiJarSection> {
-  bool _expanded = true;
-  List<Map<String, String>> _reflections = [];
-  bool _loaded = false;
-
-  String _dateKey(DateTime d) =>
-      '${d.year}_${d.month}_${d.day}';
-
-  Future<void> _loadReflections() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'mood_reflections_${_dateKey(widget.date)}';
-    final json = prefs.getString(key);
-    if (mounted) {
-      setState(() {
-        if (json != null) {
-          try {
-            _reflections = (jsonDecode(json) as List)
-                .map((e) => Map<String, String>.from(e as Map))
-                .toList();
-          } catch (_) {
-            _reflections = [];
-          }
-        } else {
-          _reflections = [];
-        }
-        _loaded = true;
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadReflections();
-  }
-
-  @override
-  void didUpdateWidget(covariant _EmojiJarSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.date != widget.date) {
-      _loadReflections();
-    }
-  }
-
-  String _formatDate(DateTime date, bool isZh) {
-    final day = DateFormat('E·MMMd', isZh ? 'zh' : 'en').format(date);
-    return day.replaceAll(',', '');
-  }
-
-  bool get _isToday =>
-      widget.date.year == DateTime.now().year &&
-      widget.date.month == DateTime.now().month &&
-      widget.date.day == DateTime.now().day;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final emotions = context.watch<JarProvider>().getDayEmotions(widget.date);
-    final hasEmoji = emotions.isNotEmpty;
-
-    return Card(
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Text('🫙', style: TextStyle(fontSize: 20)),
-            title: Text(
-              l.emojiJarTitle,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            trailing: IconButton(
-              icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-              onPressed: () => setState(() => _expanded = !_expanded),
-            ),
-          ),
-          if (_expanded)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: EmojiJarWidget(
-                date: widget.date,
-                canUseAI: widget.canUseAI,
-                isToday: _isToday,
-                existingReflections: _reflections,
-                onReflectionSaved: _loadReflections,
-              ),
-            ),
         ],
       ),
     );

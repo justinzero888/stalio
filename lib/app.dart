@@ -16,7 +16,6 @@ import 'screens/home/home_screen.dart';
 import 'screens/moment/moment_screen.dart';
 import 'screens/cherished/cherished_memory_screen.dart';
 import 'screens/settings/settings_screen.dart';
-import 'screens/add_entry_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
 import 'core/services/export_service.dart';
@@ -28,7 +27,6 @@ class StalioApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Create repositories
     final entryRepository = EntryRepository(storageService);
     final routineRepository = RoutineRepository(storageService);
     final tagRepository = TagRepository(storageService);
@@ -36,32 +34,23 @@ class StalioApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        // Services
         Provider<StorageService>.value(value: storageService),
         Provider<ExportService>(
           create: (context) => ExportService(storageService),
         ),
-
-        // Theme provider
         ChangeNotifierProvider(create: (_) {
           final provider = ThemeProvider(storageService);
           provider.loadSettings();
           return provider;
         }),
-
-        // Locale provider
         ChangeNotifierProvider(create: (_) {
           final provider = LocaleProvider();
           provider.loadLocale();
           return provider;
         }),
-
-        // Repository providers
         Provider<EntryRepository>.value(value: entryRepository),
         Provider<RoutineRepository>.value(value: routineRepository),
         Provider<TagRepository>.value(value: tagRepository),
-
-        // Main data providers
         ChangeNotifierProvider(
           create: (_) => EntryProvider(entryRepository)..loadEntries(),
         ),
@@ -75,15 +64,11 @@ class StalioApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => TagCategoryProvider(tagCategoryRepository)..loadCategories(),
         ),
-
-        // JarProvider — depends on EntryProvider
         ChangeNotifierProxyProvider<EntryProvider, JarProvider>(
           create: (context) => JarProvider(context.read<EntryProvider>()),
           update: (context, entryProvider, jar) =>
               jar!..update(entryProvider),
         ),
-
-        // SummaryProvider — depends on EntryProvider + RoutineProvider
         ChangeNotifierProxyProvider2<EntryProvider, RoutineProvider,
             SummaryProvider>(
           create: (context) => SummaryProvider(
@@ -123,90 +108,31 @@ class _MainScreenState extends State<MainScreen> {
   int _navIndex = 0;
   late final List<Widget> _screens;
 
-  // Nav: 0=MyDay, 1=Tallies, 2=+, 3=Notes, 4=Settings
-  // Screen: 0=Home, 1=Tallies, 2=Notes, 3=Settings
-  static const _navToScreen = <int?>[0, 1, null, 2, 3];
-  int? _lastScreenIndex = 0;
-
   @override
   void initState() {
     super.initState();
     _screens = [
       const HomeScreen(),
       const InsightsScreen(),
-      const MomentScreen(),
       const SettingsScreen(),
     ];
   }
 
-  void _onTabTapped(int index) {
-    if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEntryScreen()));
-      return;
-    }
-    setState(() {
-      _navIndex = index;
-      _lastScreenIndex = _navToScreen[index];
-    });
-  }
-
-  Future<void> _seedWelcomeEntry() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('welcome_entry_seeded') == true) return;
-
-    if (!mounted) return;
-    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-    final entryProvider = context.read<EntryProvider>();
-
-    await entryProvider.addEntry(
-      type: EntryType.freeform,
-      content: isZh
-          ? '欢迎使用 Micro Habits ✨\n\n'
-            '这是一个帮助你记录日常、追踪习惯、反思成长的空间。\n\n'
-            '📝 记录：点击 + 按钮写日记，可以添加情绪和标签。\n'
-            '📋 习惯：在 Habits 页面管理日常习惯，打卡追踪。\n'
-            '💡 洞察：查看你的情绪变化、习惯完成率和图表分析。\n\n'
-            '开始你的习惯之旅吧！'
-          : 'Welcome to Micro Habits ✨\n\n'
-            'A space to record daily moments, track habits, and reflect on your growth.\n\n'
-            '📝 Jot: Tap the + button to write entries with emotions and tags.\n'
-            '📋 Habits: Manage daily habits and track your streaks.\n'
-            '📊 Tallies: Explore mood trends, habit completion, and charts.\n\n'
-            'Start your habit journey!',
-      tagIds: ['tag_daily'],
-      emotion: '😊',
-    );
-
-    await prefs.setBool('welcome_entry_seeded', true);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
     return Scaffold(
       body: IndexedStack(
-        index: _lastScreenIndex ?? 0,
+        index: _navIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _navIndex,
-        onTap: _onTabTapped,
-        type: BottomNavigationBarType.fixed,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'My Day'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Tallies'),
-          BottomNavigationBarItem(
-            icon: Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFF10317D),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.add, color: Color(0xFFE0B84F), size: 32, weight: 700),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.note_alt_outlined), label: 'Notes'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _navIndex,
+        onDestinationSelected: (index) => setState(() => _navIndex = index),
+        destinations: [
+          NavigationDestination(icon: const Icon(Icons.calendar_today), label: isZh ? '日常' : 'Daily'),
+          NavigationDestination(icon: const Icon(Icons.bar_chart), label: 'Tallies'),
+          NavigationDestination(icon: const Icon(Icons.settings_outlined), label: isZh ? '设置' : 'Settings'),
         ],
       ),
     );
