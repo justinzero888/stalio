@@ -13,6 +13,8 @@ import '../../core/services/export_service.dart';
 import '../../core/services/ad_service.dart';
 import '../../core/services/iap_service.dart';
 import '../../core/config/environment.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 import '../../core/services/voice_notification_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -75,8 +77,22 @@ class _GeneralTab extends StatefulWidget {
   State<_GeneralTab> createState() => _GeneralTabState();
 }
 
-class _GeneralTabState extends State<_GeneralTab> {
+  class _GeneralTabState extends State<_GeneralTab> {
   BannerAd? _bannerAd;
+  bool _crashReportingEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCrashReportingPref();
+  }
+
+  Future<void> _loadCrashReportingPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _crashReportingEnabled = prefs.getBool('crash_reporting') ?? true;
+    });
+  }
 
   @override
   void dispose() {
@@ -98,6 +114,17 @@ class _GeneralTabState extends State<_GeneralTab> {
           onChanged: (value) {
             storage.setVoiceEnabled(value);
             setState(() {});
+          },
+        ),
+        SwitchListTile(
+          title: Text(isZh ? '崩溃报告' : 'Crash Reporting'),
+          subtitle: Text(isZh ? '发送匿名崩溃报告帮助改进 Stalio' : 'Send anonymous crash reports to help improve Stalio'),
+          value: _crashReportingEnabled,
+          onChanged: (value) async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('crash_reporting', value);
+            await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(value);
+            setState(() => _crashReportingEnabled = value);
           },
         ),
         if (voiceEnabled)
