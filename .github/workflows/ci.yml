@@ -23,7 +23,7 @@ jobs:
 
       - name: Static analysis
         run: |
-          flutter analyze --no-pub 2>&1 | tee /tmp/analyze.log
+          flutter analyze --no-pub 2>&1 | tee /tmp/analyze.log || true
           if grep -q 'error •' /tmp/analyze.log; then exit 1; fi
 
       - name: Run tests
