@@ -378,20 +378,10 @@ class _MomentScreenState extends State<MomentScreen> {
               ),
               if (entry.type == EntryType.routine && tags.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Wrap(
-                    spacing: 6,
-                    children: tags.map((t) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Color(int.parse(t.color.replaceFirst('#', '0xFF'))).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        t.displayName(isZh),
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(int.parse(t.color.replaceFirst('#', '0xFF')))),
-                      ),
-                    )).toList(),
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    tags.map((t) => t.displayName(isZh)).join(' · '),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
                 ),
               if (entry.type != EntryType.routine && tags.isNotEmpty)
