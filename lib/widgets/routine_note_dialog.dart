@@ -29,7 +29,18 @@ class _RoutineNoteDialogState extends State<RoutineNoteDialog> {
   final _controller = TextEditingController();
   bool _isExpanded = false;
 
+  bool _hasText = false;
+
   bool get _isWritingHabit => widget._isWritingHabit;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final hasText = _controller.text.trim().isNotEmpty;
+      if (hasText != _hasText) setState(() => _hasText = hasText);
+    });
+  }
 
   @override
   void dispose() {
@@ -131,7 +142,7 @@ class _RoutineNoteDialogState extends State<RoutineNoteDialog> {
           child: Text(isZh ? '跳过' : 'Skip'),
         ),
         FilledButton(
-          onPressed: _isWritingHabit && _controller.text.trim().isEmpty ? null : _submit,
+          onPressed: _isWritingHabit && !_hasText ? null : _submit,
           child: Text(isZh ? '保存并完成' : 'Save & Done'),
         ),
       ],
