@@ -71,6 +71,9 @@ class _InsightsContentState extends State<_InsightsContent> {
       const SizedBox(height: 16),
       _HabitsTab(summary: summary, isZh: isZh),
       const SizedBox(height: 24),
+      _NotesTab(summary: summary, isZh: isZh),
+
+      const SizedBox(height: 24),
       TagAnalyticsTab(summary: summary, isZh: isZh),
     ]);
   }
