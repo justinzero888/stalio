@@ -376,7 +376,25 @@ class _MomentScreenState extends State<MomentScreen> {
                 DateFormat('HH:mm').format(entry.createdAt),
                 style: const TextStyle(fontSize: 12),
               ),
-              if (tags.isNotEmpty)
+              if (entry.type == EntryType.routine && tags.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Wrap(
+                    spacing: 6,
+                    children: tags.map((t) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Color(int.parse(t.color.replaceFirst('#', '0xFF'))).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        t.displayName(isZh),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(int.parse(t.color.replaceFirst('#', '0xFF')))),
+                      ),
+                    )).toList(),
+                  ),
+                ),
+              if (entry.type != EntryType.routine && tags.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Wrap(

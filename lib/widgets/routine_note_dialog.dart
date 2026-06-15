@@ -52,12 +52,14 @@ class _RoutineNoteDialogState extends State<RoutineNoteDialog> {
     final text = _controller.text.trim();
     if (_isWritingHabit && text.isEmpty) return;
 
-    final entryProvider = context.read<EntryProvider>();
-    entryProvider.addEntry(
-      type: EntryType.routine,
-      content: text,
-      tagIds: _resolveHabitTags(),
-    );
+    if (text.isNotEmpty) {
+      final entryProvider = context.read<EntryProvider>();
+      entryProvider.addEntry(
+        type: EntryType.routine,
+        content: text,
+        tagIds: _resolveHabitTags(),
+      );
+    }
 
     context.read<RoutineProvider>().toggleComplete(widget.routine.id, date: widget.date);
     Navigator.of(context).pop();
