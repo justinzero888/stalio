@@ -66,11 +66,46 @@ class _RoutineNoteDialogState extends State<RoutineNoteDialog> {
   List<String> _resolveHabitTags() {
     final tagProvider = context.read<TagProvider>();
     final tags = <String>[];
-    final catIds = _categoryTagIds();
-    for (final id in catIds) {
+
+    // 1. Add category tag (links to category)
+    for (final id in _categoryTagIds()) {
       if (tagProvider.getTagById(id) != null) tags.add(id);
     }
+
+    // 2. Add habit-specific tag (links note back to the habit)
+    final habitTagId = 'habit_${widget.routine.id}';
+    if (tagProvider.getTagById(habitTagId) == null) {
+      // Create tag on the fly matching the habit's display name
+      final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
+      tagProvider.addTag(
+        name: widget.routine.displayName(isZh),
+        nameEn: widget.routine.displayName(false),
+        color: _categoryColor(widget.routine.category),
+        categoryId: _categoryTagIds().firstOrNull,
+      );
+      // The tag was just created — need to find it by name
+      final created = tagProvider.tags.where((t) => t.name == widget.routine.name || t.nameEn == widget.routine.nameEn).firstOrNull;
+      if (created != null) tags.add(created.id);
+    } else {
+      tags.add(habitTagId);
+    }
+
     return tags;
+  }
+
+  String _categoryColor(RoutineCategory? cat) {
+    return switch (cat) {
+      RoutineCategory.health => '#34C759',
+      RoutineCategory.fitness => '#FF9500',
+      RoutineCategory.nutrition => '#FF3B30',
+      RoutineCategory.sleep => '#5856D6',
+      RoutineCategory.mindfulness => '#AF52DE',
+      RoutineCategory.reflection => '#007AFF',
+      RoutineCategory.restraint => '#FF2D55',
+      RoutineCategory.connection => '#FF9500',
+      RoutineCategory.other => '#9E9E9E',
+      _ => '#9E9E9E',
+    };
   }
 
   List<String> _categoryTagIds() {
