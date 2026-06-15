@@ -96,3 +96,93 @@ When adding a new table or column, follow this order strictly:
 **Fix:** Had to re-apply 4 days of changes manually. Lesson: **commit after every completed work item.** Atomic commits are cheap; manually rewriting lost code is not.
 
 **Rule:** Commit after each day's work. Never leave uncommitted changes that span multiple features.
+
+---
+
+# Lessons Learned — June 14, 2026
+
+## 8. Nested ListView ≠ Composition
+
+**Problem:** Habits statistics under Tallies were completely empty after merging 4 sub-tabs into 2.
+
+**Root Cause:** `_buildHabitsContent` returns a `ListView` whose children include `_HabitsTab` and `_NotesTab`, which also return `ListView`. Without `shrinkWrap: true` and `NeverScrollableScrollPhysics()`, inner ListViews take infinite height in the parent's unbounded scroll axis, collapsing to zero visible content.
+
+**Fix:** Added `shrinkWrap: true, physics: const NeverScrollableScrollPhysics()` to every inner ListView.
+
+**Rule:** **When composing ListViews inside other scrollable widgets, every inner ListView MUST have `shrinkWrap: true` and `NeverScrollableScrollPhysics()`.** Or better — avoid nested ListViews by using `Column` + `SingleChildScrollView`.
+
+---
+
+## 9. The sed Trap: Braces Don't Care About Your Intentions
+
+**Problem:** sed `534,$d` on `home_screen.dart` tried to delete the `_EmojiJarSection` class (100 lines at end of file). But it also deleted the closing braces of `_OnboardingBanner` the preceding class, corrupting the file.
+
+**Root Cause:** The `sed <line-range>d` command deletes exact line numbers. When the target class ends the file, but the previous class's last line overlaps, braces are lost. Two classes sharing sequential lines = sed can't distinguish boundaries.
+
+**Fix:** **Don't use sed to delete end-of-file code.** Instead:
+1. Use edit tool for targeted removals (exact oldString/newString matching)
+2. Keep unused classes as dead code — they harm nothing but a few KB of source
+3. If you must sed, verify brace count before/after: `grep -c '{' file` == `grep -c '}' file`
+
+**Rule:** **sed is for line-precise operations within a file, not for structural deletions near class boundaries.** If a class is at the end of a file, leave it. Dead code is cheaper than a corrupted build.
+
+---
+
+## 10. Firebase `initializeApp()` Hangs Without Valid Config
+
+**Problem:** App hung on launch on all three sims. Firebase `initializeApp()` blocks the main isolate indefinitely when config files are missing or invalid.
+
+**Root Cause:** `Firebase.initializeApp()` has NO built-in timeout. If `google-services.json` or `GoogleService-Info.plist` is absent/malformed, the method blocks forever. The hardcoded `FirebaseOptions` with an invalid API key also causes an uncaught exception.
+
+**Fix:** Wrap in try-catch with graceful degradation:
+```dart
+try {
+  await Firebase.initializeApp();
+} catch (e) {
+  debugPrint('Firebase init skipped: $e');
+}
+```
+On sims, Crashlytics silently degrades. On real devices with valid config, it works normally.
+
+**Rule:** **Never `await Firebase.initializeApp()` without try-catch.** Always provide a fallback path. The method has no timeout.
+
+---
+
+## 11. Stale Sim Installs Hide Changes
+
+**Problem:** Changes deployed to sims were not visible. User reported "changes are not reflecting."
+
+**Root Cause:** `xcrun simctl install` without uninstalling first may leave the old app binary cached. The new install overlays the old, and the running instance may still use the cached version.
+
+**Fix:** Full clean deployment cycle:
+```bash
+xcrun simctl terminate <device> <bundle-id>   # kill running app
+xcrun simctl uninstall <device> <bundle-id>    # remove old binary
+flutter build ios --debug --simulator          # rebuild
+xcrun simctl install <device> ...              # install fresh
+xcrun simctl launch <device> <bundle-id>       # launch
+```
+
+**Rule:** **When UI changes aren't visible, kill + uninstall + rebuild + fresh install.** Never just `install` over an existing app — the cache may betray you.
+
+---
+
+## 12. Flutter TextField + Button = Stale State
+
+**Problem:** "Save & Done" button in `RoutineNoteDialog` stayed greyed out even after typing text.
+
+**Root Cause:** The `FilledButton.onPressed` closure reads `_controller.text.trim().isEmpty` — which is evaluated at build time. TextField updates the controller value internally but doesn't trigger a rebuild of the parent widget. The button never re-evaluates.
+
+**Fix:** Add a controller listener that updates a `_hasText` state variable:
+```dart
+@override
+void initState() {
+  _controller.addListener(() {
+    final hasText = _controller.text.trim().isNotEmpty;
+    if (hasText != _hasText) setState(() => _hasText = hasText);
+  });
+}
+```
+Then use `_hasText` in the button's `onPressed` condition.
+
+**Rule:** **TextField controller values are NOT reactive.** Always use a listener + setState (or a ValueListenableBuilder) when UI decisions depend on text content.
