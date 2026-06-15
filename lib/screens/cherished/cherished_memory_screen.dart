@@ -88,7 +88,7 @@ class _HabitsTab extends StatelessWidget {
     final active = p.routines.where((r) => r.isActive).toList();
     int best = 0;
     for (final r in active) { if (r.streak > best) best = r.streak; }
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
+    return ListView(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
       _SectionCard(title: isZh?'Habit Stats':'Habit Stats', child: SizedBox(height: 110, child: Row(children: [
         Expanded(child: _MiniStatCard(icon: Icons.checklist, value: '${p.routines.length}', label: isZh?'Total':'Total')),
         const SizedBox(width: 8),
@@ -108,7 +108,7 @@ class _NotesTab extends StatelessWidget {
   const _NotesTab({required this.summary, required this.isZh});
   @override
   Widget build(BuildContext context) {
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
+    return ListView(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
       _SectionCard(title: isZh?'Writing Stats':'Writing Stats', child: _WritingStatsSection(summary: summary, isZh: isZh)),
       const SizedBox(height: 24),
       _SectionCard(title: isZh?'Writing Activity':'Writing Activity', trailing: summary.totalEntries>0?Text('${summary.totalEntries} ${isZh?"entries":"entries"}',style:TextStyle(color:Colors.grey[400],fontSize:12)):null, child: _CalendarHeatmap(entriesPerDay: summary.entriesPerDay)),
