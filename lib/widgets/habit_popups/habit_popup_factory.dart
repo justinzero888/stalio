@@ -187,7 +187,6 @@ class _BooleanNoteShellState extends State<_BooleanNoteShell> {
       title: _PopupHeader(routine: r, isZh: widget.isZh),
       content: TextField(
         controller: _controller,
-        autofocus: true,
         maxLines: 3,
         decoration: InputDecoration(
           hintText: widget.isZh ? '记录要点...（可选）' : 'Add a note... (optional)',
@@ -648,7 +647,6 @@ class _TextRequiredShellState extends State<_TextRequiredShell> {
             padding: EdgeInsets.only(bottom: i < widget.fieldCount - 1 ? 8 : 0),
             child: TextField(
               controller: _controllers[i],
-              autofocus: i == 0,
               maxLines: 3,
               decoration: InputDecoration(
                 hintText: widget.isZh ? '写下你的想法...' : 'Write your thoughts...',
