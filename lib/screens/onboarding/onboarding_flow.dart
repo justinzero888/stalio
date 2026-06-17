@@ -18,6 +18,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   int _currentPage = 0;
   late Set<String> _selectedHabitIds;
   List<Routine> _habitList = const [];
+  bool _showingLibrary = false;
 
   @override
   void initState() {
@@ -55,6 +56,23 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       _habitList = context.read<RoutineProvider>().routines;
     }
 
+    // Show the habit library as an inline widget swap — no Navigator.push,
+    // no ModalBarrier. On iOS, pushing a route mid-gesture installs the barrier
+    // before the route content is positioned, causing it to absorb all touches
+    // and make the app appear frozen. A setState swap sidesteps the issue
+    // entirely.
+    if (_showingLibrary) {
+      return _HabitLibraryScreen(
+        routines: _habitList,
+        selectedIds: _selectedHabitIds,
+        onSave: (ids) => setState(() {
+          _selectedHabitIds = ids;
+          _showingLibrary = false;
+        }),
+        onBack: () => setState(() => _showingLibrary = false),
+      );
+    }
+
     final screens = [
       _WelcomeScreen(onGetStarted: () => _goToPage(1)),
       _HowItWorksScreen(onSelectHabits: () => _goToPage(2)),
@@ -81,25 +99,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     );
   }
 
-  Future<void> _openHabitLibrary() async {
-    // Defer to after the current frame so the rendering pipeline has settled
-    // before the new route's ModalBarrier is installed. On iOS, pushing a route
-    // mid-gesture leaves the barrier in an invisible state that absorbs all
-    // touches, making the app appear frozen. Same fix as _showCarryForwardDialog.
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
-    final routines = context.read<RoutineProvider>().routines;
-    final result = await Navigator.of(context).push<Set<String>>(
-      MaterialPageRoute(
-        builder: (_) => _HabitLibraryScreen(
-          routines: routines,
-          selectedIds: _selectedHabitIds.toSet(),
-        ),
-      ),
-    );
-    if (result != null && mounted) {
-      setState(() => _selectedHabitIds = result);
-    }
+  void _openHabitLibrary() {
+    setState(() => _showingLibrary = true);
   }
 }
 
@@ -588,10 +589,14 @@ class _HabitToggleTile extends StatelessWidget {
 class _HabitLibraryScreen extends StatefulWidget {
   final Set<String> selectedIds;
   final List<Routine> routines;
+  final void Function(Set<String> ids) onSave;
+  final VoidCallback onBack;
 
   const _HabitLibraryScreen({
     required this.selectedIds,
     required this.routines,
+    required this.onSave,
+    required this.onBack,
   });
 
   @override
@@ -642,10 +647,14 @@ class _HabitLibraryScreenState extends State<_HabitLibraryScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: widget.onBack,
+        ),
         title: Text(isZh ? '所有习惯' : 'All Habits'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, _selectedIds),
+            onPressed: () => widget.onSave(_selectedIds),
             child: Text(
               isZh ? '保存' : 'Save',
               style: TextStyle(
