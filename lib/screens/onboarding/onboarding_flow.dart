@@ -82,6 +82,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 
   Future<void> _openHabitLibrary() async {
+    // Defer to after the current frame so the rendering pipeline has settled
+    // before the new route's ModalBarrier is installed. On iOS, pushing a route
+    // mid-gesture leaves the barrier in an invisible state that absorbs all
+    // touches, making the app appear frozen. Same fix as _showCarryForwardDialog.
+    await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
     final routines = context.read<RoutineProvider>().routines;
     final result = await Navigator.of(context).push<Set<String>>(
