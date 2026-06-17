@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import '../../providers/entry_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/tag_category_provider.dart';
-import '../../providers/tag_category_provider.dart';
 import '../../providers/locale_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/models.dart';
@@ -15,14 +14,16 @@ import '../../l10n/app_localizations.dart';
 import '../../core/utils/share_format.dart';
 import 'entry_detail_screen.dart';
 
-class MomentScreen extends StatefulWidget {
-  const MomentScreen({super.key});
+/// Scaffold-free body widget — safe to embed in TabBarView or any other
+/// Scaffold's body without creating nested-Scaffold gesture conflicts on iOS.
+class MomentBody extends StatefulWidget {
+  const MomentBody({super.key});
 
   @override
-  State<MomentScreen> createState() => _MomentScreenState();
+  State<MomentBody> createState() => _MomentBodyState();
 }
 
-class _MomentScreenState extends State<MomentScreen> {
+class _MomentBodyState extends State<MomentBody> {
   String _filter = 'all'; // all, today, week, tag
   String _searchQuery = '';
   String? _tagFilterId;
@@ -42,102 +43,119 @@ class _MomentScreenState extends State<MomentScreen> {
     final l = AppLocalizations.of(context)!;
     final isZh = context.watch<LocaleProvider>().locale.languageCode == 'zh';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _isSelecting
-            ? Text('${_selectedEntryIds.length} ${isZh ? '已选' : 'selected'}')
-            : Text(l.moment, style: const TextStyle(fontWeight: FontWeight.bold)),
-        actions: _isSelecting
-            ? [
-                IconButton(icon: const Icon(Icons.share), tooltip: 'Share', onPressed: () => _showSharePreview(context)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() { _isSelecting = false; _selectedEntryIds.clear(); })),
-              ]
-            : null,
-      ),
-      body: Consumer<EntryProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return Column(
-            children: [
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Semantics(
-                  identifier: 'input_moments_search',
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: l.searchEntries,
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                    ),
-                    onChanged: (value) {
-                      setState(() => _searchQuery = value.trim());
-                    },
+    return Column(
+      children: [
+        // Selection action bar (replaces AppBar in embedded context)
+        if (_isSelecting)
+          Material(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(children: [
+                  Text(
+                    '${_selectedEntryIds.length} ${isZh ? '已选' : 'selected'}',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    tooltip: 'Share',
+                    onPressed: () => _showSharePreview(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => setState(() {
+                      _isSelecting = false;
+                      _selectedEntryIds.clear();
+                    }),
+                  ),
+                ]),
               ),
-              // Filter Chips
-              SingleChildScrollView(
+            ),
+          ),
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Semantics(
+            identifier: 'input_moments_search',
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: l.searchEntries,
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (value) {
+                setState(() => _searchQuery = value.trim());
+              },
+            ),
+          ),
+        ),
+        // Filter Chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(children: [
+            _buildFilterChip(l.all, 'all'),
+            const SizedBox(width: 8),
+            _buildFilterChip(l.today, 'today'),
+            const SizedBox(width: 8),
+            _buildFilterChip(l.thisWeek, 'week'),
+            const SizedBox(width: 8),
+            _buildFilterChip(l.tags, 'tag'),
+          ]),
+        ),
+        // Category Filter Chips
+        Consumer<TagCategoryProvider>(
+          builder: (context, catProvider, _) {
+            final categories = catProvider.categories;
+            if (categories.isEmpty) return const SizedBox(height: 0);
+            return Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildFilterChip(l.all, 'all'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(l.today, 'today'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(l.thisWeek, 'week'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(l.tags, 'tag'),
-                  ],
-                ),
-              ),
-              // Category Filter Chips
-              Consumer<TagCategoryProvider>(
-                builder: (context, catProvider, _) {
-                  final categories = catProvider.categories;
-                  if (categories.isEmpty) return const SizedBox(height: 0);
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          _buildCategoryChip(l.all, null),
-                          const SizedBox(width: 8),
-                          ...categories.expand((cat) => [
-                            _buildCategoryChip(cat.displayName(
-                                context.read<LocaleProvider>().locale.languageCode == 'zh'), cat.id),
-                            const SizedBox(width: 8),
-                          ]),
-                        ],
-                      ),
+                child: Row(children: [
+                  _buildCategoryChip(l.all, null),
+                  const SizedBox(width: 8),
+                  ...categories.expand((cat) => [
+                    _buildCategoryChip(
+                      cat.displayName(context.read<LocaleProvider>().locale.languageCode == 'zh'),
+                      cat.id,
                     ),
-                  );
-                },
+                    const SizedBox(width: 8),
+                  ]),
+                ]),
               ),
-              const SizedBox(height: 8),
-              // Entry List
-              Expanded(
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        // Entry List
+        Expanded(
+          child: Consumer<EntryProvider>(
+            builder: (context, provider, _) {
+              if (provider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return Semantics(
+                identifier: 'list_entries',
                 child: _buildEntryList(provider),
-              ),
-            ],
-          );
-        },
-      ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -201,9 +219,7 @@ class _MomentScreenState extends State<MomentScreen> {
 
     if (tags.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l.noTagsWarning),
-        ),
+        SnackBar(content: Text(l.noTagsWarning)),
       );
       return;
     }
@@ -220,10 +236,7 @@ class _MomentScreenState extends State<MomentScreen> {
               final colorValue =
                   int.parse(tag.color.substring(1), radix: 16) + 0xFF000000;
               return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Color(colorValue),
-                  radius: 8,
-                ),
+                leading: CircleAvatar(backgroundColor: Color(colorValue), radius: 8),
                 title: Text(tag.displayName(isZh)),
                 onTap: () {
                   setState(() {
@@ -258,7 +271,6 @@ class _MomentScreenState extends State<MomentScreen> {
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     final now = DateTime.now();
 
-    // Get base list from date filter
     List<Entry> entries;
     switch (_filter) {
       case 'today':
@@ -271,51 +283,42 @@ class _MomentScreenState extends State<MomentScreen> {
         break;
       case 'week':
         final weekAgo = now.subtract(const Duration(days: 7));
-        entries = provider.allEntries
-            .where((e) => e.createdAt.isAfter(weekAgo))
-            .toList();
+        entries = provider.allEntries.where((e) => e.createdAt.isAfter(weekAgo)).toList();
         break;
       case 'tag':
         entries = _tagFilterId != null
-            ? provider.allEntries
-                .where((e) => e.tagIds.contains(_tagFilterId))
-                .toList()
+            ? provider.allEntries.where((e) => e.tagIds.contains(_tagFilterId)).toList()
             : provider.allEntries;
         break;
       default:
         entries = provider.allEntries;
     }
 
-    // Apply category filter
     if (_categoryFilterId != null) {
       final tagProvider = context.read<TagProvider>();
-      final categoryTagIds = tagProvider.tags
+      final catTagIds = tagProvider.tags
           .where((t) => t.categoryId == _categoryFilterId)
           .map((t) => t.id)
           .toSet();
       entries = entries
-          .where((e) => e.tagIds.any((id) => categoryTagIds.contains(id)))
+          .where((e) =>
+              e.tagIds.contains(_categoryFilterId) ||
+              e.tagIds.any((id) => catTagIds.contains(id)))
           .toList();
     }
 
-    // Apply search filter
     if (_searchQuery.isNotEmpty) {
       entries = entries
-          .where((e) =>
-              e.content.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where((e) => e.content.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
     }
 
+    entries = entries.where((e) => e.type != EntryType.routine || e.content.isNotEmpty).toList();
+
     if (entries.isEmpty) {
-      return Center(
-        child: Text(
-          l.noEntriesYet,
-          textAlign: TextAlign.center,
-        ),
-      );
+      return Center(child: Text(l.noEntriesYet, textAlign: TextAlign.center));
     }
 
-    // Group by date
     final grouped = <String, List<Entry>>{};
     for (var entry in entries) {
       final dateKey = isZh
@@ -324,16 +327,13 @@ class _MomentScreenState extends State<MomentScreen> {
       grouped.putIfAbsent(dateKey, () => []).add(entry);
     }
 
-    return Semantics(
-      identifier: 'list_entries',
-      child: ListView.builder(
+    return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: grouped.length,
       itemBuilder: (context, index) {
         final dateKey = grouped.keys.elementAt(index);
         final dateEntries = grouped[dateKey]!;
         final isToday = _isToday(dateEntries.first.createdAt);
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -341,16 +341,13 @@ class _MomentScreenState extends State<MomentScreen> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
                 isToday ? l.today : dateKey,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.grey),
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
               ),
             ),
-            ...dateEntries
-                .map((entry) => _buildEntryCard(entry, provider)),
+            ...dateEntries.map((entry) => _buildEntryCard(entry, provider)),
           ],
         );
       },
-    ),
     );
   }
 
@@ -358,6 +355,9 @@ class _MomentScreenState extends State<MomentScreen> {
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     final tagProvider = context.read<TagProvider>();
     final tags = tagProvider.tags.where((t) => entry.tagIds.contains(t.id)).toList();
+    final String? routineMetaName = (entry.type == EntryType.routine && entry.metadata != null)
+        ? entry.metadata!['routineName'] as String?
+        : null;
     final isSelected = _selectedEntryIds.contains(entry.id);
 
     return Card(
@@ -366,21 +366,22 @@ class _MomentScreenState extends State<MomentScreen> {
         identifier: 'entry_item',
         child: ListTile(
           leading: _isSelecting
-              ? Checkbox(value: isSelected, onChanged: (_) => _toggleEntry(entry.id), visualDensity: VisualDensity.compact)
-              : Icon(_getEntryIcon(entry), color: Theme.of(context).colorScheme.primary),
+              ? Checkbox(
+                  value: isSelected,
+                  onChanged: (_) => _toggleEntry(entry.id),
+                  visualDensity: VisualDensity.compact,
+                )
+              : _getEntryLeading(entry, routineMetaName),
           title: Text(entry.content),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                DateFormat('HH:mm').format(entry.createdAt),
-                style: const TextStyle(fontSize: 12),
-              ),
-              if (entry.type == EntryType.routine && tags.isNotEmpty)
+              Text(DateFormat('HH:mm').format(entry.createdAt), style: const TextStyle(fontSize: 12)),
+              if (routineMetaName != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    tags.map((t) => t.displayName(isZh)).join(' · '),
+                    routineMetaName,
                     style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
                 ),
@@ -395,7 +396,13 @@ class _MomentScreenState extends State<MomentScreen> {
                         color: Color(int.parse(t.color.replaceFirst('#', '0xFF'))).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(t.displayName(isZh), style: TextStyle(fontSize: 10, color: Color(int.parse(t.color.replaceFirst('#', '0xFF'))))),
+                      child: Text(
+                        t.displayName(isZh),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Color(int.parse(t.color.replaceFirst('#', '0xFF'))),
+                        ),
+                      ),
                     )).toList(),
                   ),
                 ),
@@ -403,13 +410,37 @@ class _MomentScreenState extends State<MomentScreen> {
           ),
           onTap: _isSelecting
               ? () => _toggleEntry(entry.id)
-              : () { Navigator.push(context, MaterialPageRoute(builder: (_) => EntryDetailScreen(entry: entry))); },
+              : () => Navigator.push(context, MaterialPageRoute(builder: (_) => EntryDetailScreen(entry: entry))),
           onLongPress: _isSelecting
               ? null
-              : () { setState(() { _isSelecting = true; _selectedEntryIds.add(entry.id); }); },
+              : () => setState(() { _isSelecting = true; _selectedEntryIds.add(entry.id); }),
         ),
       ),
     );
+  }
+
+  Widget _getEntryLeading(Entry entry, String? routineMetaName) {
+    if (entry.type == EntryType.routine) {
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withAlpha(25),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(
+            routineMetaName != null ? routineMetaName.substring(0, 1) : '✓',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      );
+    }
+    return Icon(_getEntryIcon(entry), color: Theme.of(context).colorScheme.primary);
   }
 
   IconData _getEntryIcon(Entry entry) {
@@ -420,9 +451,7 @@ class _MomentScreenState extends State<MomentScreen> {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
   void _showDeleteDialog(Entry entry, EntryProvider provider) {
@@ -433,17 +462,13 @@ class _MomentScreenState extends State<MomentScreen> {
         title: Text(l.deleteEntry),
         content: Text(l.deleteEntryConfirm),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l.cancel),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
           TextButton(
             onPressed: () {
               provider.deleteEntry(entry.id);
               Navigator.pop(context);
             },
-            child: Text(l.delete,
-                style: const TextStyle(color: Colors.red)),
+            child: Text(l.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -467,7 +492,7 @@ class _MomentScreenState extends State<MomentScreen> {
     selected.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
 
-    String _buildFormat(int index) {
+    String buildFormat(int index) {
       switch (index) {
         case 1: return ShareFormat.toMarkdown(selected, isZh);
         case 2: return ShareFormat.toRichText(selected, isZh);
@@ -476,55 +501,72 @@ class _MomentScreenState extends State<MomentScreen> {
     }
 
     int formatIndex = 0;
-    final controller = TextEditingController(text: _buildFormat(0));
-    final pageController = PageController();
+    final controller = TextEditingController(text: buildFormat(0));
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setDialogState) => AlertDialog(
-        title: Row(children: [
-          Text(isZh ? '分享预览' : 'Share Preview'),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.copy), tooltip: isZh ? '复制' : 'Copy', onPressed: () {
-            Clipboard.setData(ClipboardData(text: controller.text));
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isZh ? '已复制' : 'Copied'), duration: const Duration(seconds: 1)));
-          }),
-        ]),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _formatBtn(isZh ? '纯文本' : 'Plain', 0, formatIndex, () => setDialogState(() { formatIndex = 0; controller.text = _buildFormat(0); })),
-              const SizedBox(width: 8),
-              _formatBtn('Markdown', 1, formatIndex, () => setDialogState(() { formatIndex = 1; controller.text = _buildFormat(1); })),
-              const SizedBox(width: 8),
-              _formatBtn(isZh ? '富文本' : 'Rich', 2, formatIndex, () => setDialogState(() { formatIndex = 2; controller.text = _buildFormat(2); })),
-            ]),
-            const SizedBox(height: 8),
-            Expanded(child: SingleChildScrollView(child: Text(controller.text, style: const TextStyle(fontSize: 13, fontFamily: 'monospace')))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Row(children: [
+            Text(isZh ? '分享预览' : 'Share Preview'),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.copy),
+              tooltip: isZh ? '复制' : 'Copy',
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: controller.text));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(isZh ? '已复制' : 'Copied'),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
           ]),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: Column(children: [
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                _formatBtn(isZh ? '纯文本' : 'Plain', 0, formatIndex,
+                    () => setDialogState(() { formatIndex = 0; controller.text = buildFormat(0); })),
+                const SizedBox(width: 8),
+                _formatBtn('Markdown', 1, formatIndex,
+                    () => setDialogState(() { formatIndex = 1; controller.text = buildFormat(1); })),
+                const SizedBox(width: 8),
+                _formatBtn(isZh ? '富文本' : 'Rich', 2, formatIndex,
+                    () => setDialogState(() { formatIndex = 2; controller.text = buildFormat(2); })),
+              ]),
+              const SizedBox(height: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Text(controller.text, style: const TextStyle(fontSize: 13, fontFamily: 'monospace')),
+                ),
+              ),
+            ]),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isZh ? '取消' : 'Cancel')),
+            FilledButton.icon(
+              icon: const Icon(Icons.share, size: 18),
+              label: Text(isZh ? '分享' : 'Share'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _shareContent(controller.text, isZh);
+              },
+            ),
+            FilledButton.tonalIcon(
+              icon: const Icon(Icons.save_alt, size: 18),
+              label: Text(isZh ? '保存为文件' : 'Save as file'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _saveAsFile(controller.text, formatIndex, context, isZh);
+              },
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(isZh ? '取消' : 'Cancel')),
-          FilledButton.icon(
-            icon: const Icon(Icons.share, size: 18),
-            label: Text(isZh ? '分享' : 'Share'),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _shareContent(controller.text, isZh);
-            },
-          ),
-          FilledButton.tonalIcon(
-            icon: const Icon(Icons.save_alt, size: 18),
-            label: Text(isZh ? '保存为文件' : 'Save as file'),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _saveAsFile(controller.text, formatIndex, context, isZh);
-            },
-          ),
-        ],
-      )),
+      ),
     );
   }
 
@@ -534,8 +576,16 @@ class _MomentScreenState extends State<MomentScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(color: active ? Theme.of(context).colorScheme.primary : Colors.grey.shade200, borderRadius: BorderRadius.circular(16)),
-        child: Text(label, style: TextStyle(color: active ? Colors.white : Colors.black87, fontSize: 12, fontWeight: FontWeight.w500)),
+        decoration: BoxDecoration(
+          color: active ? Theme.of(context).colorScheme.primary : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(label,
+            style: TextStyle(
+              color: active ? Colors.white : Colors.black87,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            )),
       ),
     );
   }
@@ -552,4 +602,13 @@ class _MomentScreenState extends State<MomentScreen> {
     await file.writeAsString(content);
     await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], subject: 'Stalio Notes'));
   }
+}
+
+/// Standalone route wrapper. Use [MomentBody] directly when embedding in
+/// a [TabBarView] or any widget already inside a [Scaffold].
+class MomentScreen extends StatelessWidget {
+  const MomentScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: MomentBody());
 }

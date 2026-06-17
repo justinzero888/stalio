@@ -9,7 +9,6 @@ import '../../providers/tag_provider.dart';
 import 'tag_analytics_tab.dart';
 import '../moment/moment_screen.dart';
 import '../../providers/jar_provider.dart';
-import '../../widgets/emoji_jar.dart';
 import '../../providers/routine_provider.dart';
 import '../../models/routine.dart';
 import '../../models/tag.dart';
@@ -40,25 +39,16 @@ class _InsightsContentState extends State<_InsightsContent> {
   @override
   Widget build(BuildContext ctx) {
     final summary = ctx.watch<SummaryProvider>();
-    final jarProvider = ctx.watch<JarProvider>();
     final isZh = ctx.watch<LocaleProvider>().locale.languageCode == 'zh';
-    final years = jarProvider.yearsWithData;
 
-    if (summary.totalEntries == 0) {
-      if (summary.isLoading) return const Center(child: CircularProgressIndicator());
-      return Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.insights, size: 48, color: ctx.theme().colorScheme.outline),
-        const SizedBox(height: 16),
-        Text(isZh ? 'Start journaling to see insights' : 'Start journaling to see insights', style: ctx.theme().textTheme.bodyLarge?.copyWith(color: ctx.theme().colorScheme.outline)),
-      ])));
-    }
+    if (summary.isLoading) return const Center(child: CircularProgressIndicator());
 
     return DefaultTabController(length: 2, child: Column(children: [
       
       TabBar(tabs: [Tab(text: isZh?'习惯':'Habits'),Tab(text: isZh?'笔记':'Notes')]),
       Expanded(child: TabBarView(children: [
         _buildHabitsContent(summary, isZh),
-        const MomentScreen(),
+        const MomentBody(),
         
       ])),
     ]));
@@ -116,23 +106,6 @@ class _NotesTab extends StatelessWidget {
       _SectionCard(title: isZh?'Notes Trend':'Notes Trend', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _NoteCountChart(provider: summary)),
       const SizedBox(height: 24),
       _SectionCard(title: isZh?'Checklist Insights':'Checklist Insights', child: _ChecklistInsightsSection(summary: summary, isZh: isZh)),
-    ]);
-  }
-}
-
-class _MoodsTab extends StatelessWidget {
-  final SummaryProvider summary; final List<int> years; final bool isZh;
-  const _MoodsTab({required this.summary, required this.years, required this.isZh});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), children: [
-      _EmojiJarSection(years: years, isZh: isZh),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Mood Distribution':'Mood Distribution', child: _MoodDistributionChart(moodDistribution: summary.moodDistribution)),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Mood Trend':'Mood Trend', trailing: _ScopePicker(scope: summary.scope, onChanged: summary.setScope), child: _EmotionTrendChart(provider: summary)),
-      const SizedBox(height: 24),
-      _SectionCard(title: isZh?'Tag Impact on Mood':'Tag Impact on Mood', child: _TagMoodSection(summary: summary, isZh: isZh)),
     ]);
   }
 }
@@ -700,62 +673,6 @@ class _MoodDistributionChart extends StatelessWidget {
   }
 }
 
-class _EmojiJarSection extends StatelessWidget {
-  final List<int> years;
-  final bool isZh;
-
-  const _EmojiJarSection({required this.years, required this.isZh});
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionCard(
-      title: isZh ? '🫙 情绪罐' : '🫙 Mood Jars',
-      child: SizedBox(
-        height: 200,
-        child: Center(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: years.map((year) {
-            final jarProvider = context.watch<JarProvider>();
-            final emotions = jarProvider.getYearEmotions(year);
-
-            return SizedBox(
-              width: 120,
-              child: Column(
-                children: [
-                  EmojiJarWidget(
-                    date: DateTime(year),
-                    emotionsOverride: emotions,
-                    size: 120,
-                    canUseAI: false,
-                    isToday: false,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '$year',
-                    style:
-                        Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                  ),
-                  Text(
-                    isZh ? '${emotions.length} 个心情' : '${emotions.length} moods',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                        ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    ),
-  ));
-  }}
 class _TrendCharts extends StatelessWidget {
   const _TrendCharts();
 
