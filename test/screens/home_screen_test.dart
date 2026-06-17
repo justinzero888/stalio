@@ -16,6 +16,7 @@ import 'package:stalio/l10n/app_localizations.dart';
 class _FakeStorage extends StorageService {
   final List<Routine> routines;
   final List<Entry> entries;
+  final Map<String, bool> _tooltips = {};
 
   _FakeStorage({this.routines = const [], this.entries = const []});
 
@@ -30,6 +31,12 @@ class _FakeStorage extends StorageService {
 
   @override
   Future<List<Entry>> getEntries() async => List.from(entries);
+
+  @override
+  bool isTooltipSeen(String key) => _tooltips[key] ?? false;
+
+  @override
+  Future<void> setTooltipSeen(String key) async => _tooltips[key] = true;
 }
 
 Routine _routine({
@@ -44,6 +51,7 @@ Routine _routine({
       frequency: RoutineFrequency.daily,
       completionLog: completions,
       isActive: true,
+      trackingUiType: TrackingUiType.booleanOptionalText,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -60,6 +68,7 @@ Widget _wrap(Widget child, {List<Routine> routines = const [], List<Entry> entri
   final storage = _FakeStorage(routines: routines, entries: entries);
   return MultiProvider(
     providers: [
+      Provider<StorageService>.value(value: storage),
       ChangeNotifierProvider(create: (_) => LocaleProvider()..setLocale(const Locale('en'))),
       ChangeNotifierProvider(create: (_) => EntryProvider(EntryRepository(storage))),
       ChangeNotifierProvider(
@@ -136,9 +145,7 @@ void main() {
       expect(find.byType(ListTile), findsWidgets);
     });
 
-    testWidgets(
-        'TODO: rewrite — tapping routine now opens note dialog (Phase 7)',
-        skip: true,
+    testWidgets('tapping routine opens note dialog and can be dismissed',
         (tester) async {
       _usePhoneSurface(tester);
 
@@ -150,30 +157,40 @@ void main() {
 
       expect(find.byIcon(Icons.check_box_outline_blank), findsOneWidget);
 
+      // Tap routine — note dialog opens
       await tester.tap(find.text('5000 steps'));
       await tester.pumpAndSettle();
 
+      // Verify dialog content is visible
+      expect(find.text('5000 steps'), findsWidgets);
+      expect(find.text('Save'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
+
+      // Dismiss by tapping "Skip"
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      // Habit was completed before dialog opened (boolean_optional_text flow)
       expect(find.byIcon(Icons.check_box_outline_blank), findsNothing);
     });
 
-    testWidgets(
-        'TODO: rewrite — tapping routine now opens note dialog (Phase 7)',
-        skip: true,
+    testWidgets('completed routine shows check icon — not text label',
         (tester) async {
       _usePhoneSurface(tester);
 
       await tester.pumpWidget(_wrap(
         const HomeScreen(),
-        routines: [_routine(id: 'r1', name: '5000 steps')],
+        routines: [
+          _routine(id: 'r1', name: '5000 steps', completions: [
+            _completion('r1'),
+          ]),
+        ],
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.check_circle), findsOneWidget);
-
-      await tester.tap(find.text('5000 steps'));
-      await tester.pumpAndSettle();
-
-      expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
+      // Completed routine shows check_circle icon (consolidated row)
+      expect(find.byIcon(Icons.check_circle), findsWidgets);
+      // Name text not shown — completed routines use emoji icons only
     });
 
     testWidgets('multiple routines render as separate ListTile items',
@@ -194,6 +211,22 @@ void main() {
       expect(find.text('5000 steps'), findsOneWidget);
       expect(find.text('Drink water'), findsOneWidget);
       expect(find.text('Meditate'), findsOneWidget);
+    });
+
+    testWidgets('booleanOptionalText habit tap shows note dialog', (tester) async {
+      _usePhoneSurface(tester);
+
+      final vitamins = _routine(id: 'H002', name: 'Take vitamins');
+
+      await tester.pumpWidget(_wrap(const HomeScreen(), routines: [vitamins]));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Take vitamins'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
+      expect(find.text('Save'), findsOneWidget);
     });
   });
 }
