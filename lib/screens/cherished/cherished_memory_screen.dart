@@ -35,7 +35,22 @@ class _InsightsContent extends StatefulWidget {
   State<_InsightsContent> createState() => _InsightsContentState();
 }
 
-class _InsightsContentState extends State<_InsightsContent> {
+class _InsightsContentState extends State<_InsightsContent>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext ctx) {
     final summary = ctx.watch<SummaryProvider>();
@@ -43,15 +58,19 @@ class _InsightsContentState extends State<_InsightsContent> {
 
     if (summary.isLoading) return const Center(child: CircularProgressIndicator());
 
-    return DefaultTabController(length: 2, child: Column(children: [
-      
-      TabBar(tabs: [Tab(text: isZh?'习惯':'Habits'),Tab(text: isZh?'笔记':'Notes')]),
-      Expanded(child: TabBarView(children: [
-        _buildHabitsContent(summary, isZh),
-        const MomentBody(),
-        
-      ])),
-    ]));
+    return Column(children: [
+      TabBar(
+        controller: _tabController,
+        tabs: [Tab(text: isZh ? '习惯' : 'Habits'), Tab(text: isZh ? '笔记' : 'Notes')],
+      ),
+      Expanded(child: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildHabitsContent(summary, isZh),
+          const MomentBody(),
+        ],
+      )),
+    ]);
   }
 }
 

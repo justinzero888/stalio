@@ -4,11 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stalio/models/routine.dart';
 import 'package:stalio/models/entry.dart';
+import 'package:stalio/models/tag.dart';
 import 'package:stalio/providers/routine_provider.dart';
 import 'package:stalio/providers/entry_provider.dart';
 import 'package:stalio/providers/locale_provider.dart';
+import 'package:stalio/providers/tag_provider.dart';
 import 'package:stalio/repositories/routine_repository.dart';
 import 'package:stalio/repositories/entry_repository.dart';
+import 'package:stalio/repositories/tag_repository.dart';
 import 'package:stalio/core/services/storage_service.dart';
 import 'package:stalio/screens/home/home_screen.dart';
 import 'package:stalio/l10n/app_localizations.dart';
@@ -31,6 +34,12 @@ class _FakeStorage extends StorageService {
 
   @override
   Future<List<Entry>> getEntries() async => List.from(entries);
+
+  @override
+  Future<List<Tag>> getTags() async => [];
+
+  @override
+  Future<void> addTag(Tag tag) async {}
 
   @override
   bool isTooltipSeen(String key) => _tooltips[key] ?? false;
@@ -78,6 +87,7 @@ Widget _wrap(Widget child, {List<Routine> routines = const [], List<Entry> entri
           return p;
         },
       ),
+      ChangeNotifierProvider(create: (_) => TagProvider(TagRepository(storage))..loadTags()),
     ],
     child: MaterialApp(
       locale: const Locale('en'),

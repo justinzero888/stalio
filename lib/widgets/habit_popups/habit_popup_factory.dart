@@ -6,7 +6,7 @@ import '../../providers/locale_provider.dart';
 import '../../providers/entry_provider.dart';
 import '../../providers/routine_provider.dart';
 import '../../providers/tag_provider.dart';
-import '../../providers/tag_provider.dart';
+import '../../core/utils/dialog_utils.dart';
 
 /// ─── Habit Popup Factory ─────────────────────────────────────────────────────
 /// Dispatches to the correct popup UI based on the routine's [TrackingUiType].
@@ -65,8 +65,9 @@ Future<void> _completeRoutine(BuildContext context, Routine routine, DateTime da
   await context.read<RoutineProvider>().toggleComplete(routine.id, date: date);
 }
 
-void _createEntry(BuildContext context, Routine routine, DateTime date, String content, {List<String>? tagIds}) async {
+Future<void> _createEntry(BuildContext context, Routine routine, DateTime date, String content, {List<String>? tagIds}) async {
   final usedTags = tagIds ?? await _resolveHabitTags(context, routine);
+  if (!context.mounted) return;
   if (content.isNotEmpty) {
     context.read<EntryProvider>().addEntry(
       type: EntryType.routine,
@@ -83,7 +84,8 @@ void _createEntry(BuildContext context, Routine routine, DateTime date, String c
 
 Future<void> _completeWithEntry(BuildContext context, Routine routine, DateTime date, String content, {List<String>? tagIds}) async {
   await _completeRoutine(context, routine, date);
-  _createEntry(context, routine, date, content, tagIds: tagIds);
+  if (!context.mounted) return;
+  await _createEntry(context, routine, date, content, tagIds: tagIds);
 }
 
 Future<List<String>> _resolveHabitTags(BuildContext context, Routine routine) async {
@@ -150,20 +152,13 @@ String _categoryColor(RoutineCategory? cat) {
 
 Future<void> _showBooleanOptionalTextPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  await _completeRoutine(context, routine, date);
-  if (!context.mounted) return;
-  // Defer to let the RoutineProvider rebuild settle before the ModalBarrier is
-  // installed. On iOS, showDialog called mid-rebuild orphans the barrier and
-  // freezes all input. Same fix as _showCarryForwardDialog in home_screen.dart.
-  await WidgetsBinding.instance.endOfFrame;
-  if (!context.mounted) return;
-  final result = await showDialog<String>(
-    context: context,
+  final result = await showDialogDeferred<String>(
+    context,
     builder: (ctx) => _BooleanNoteShell(routine: routine, isZh: isZh),
   );
-  if (result != null && context.mounted) {
-    _createEntry(context, routine, date, result);
-  }
+  if (!context.mounted) return;
+  // Mark complete after dialog closes (Skip, Save, or barrier dismiss = confirmation).
+  _completeWithEntry(context, routine, date, result ?? '');
 }
 
 class _BooleanNoteShell extends StatefulWidget {
@@ -176,23 +171,49 @@ class _BooleanNoteShell extends StatefulWidget {
 
 class _BooleanNoteShellState extends State<_BooleanNoteShell> {
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  bool _inputActive = false;
 
   @override
-  void dispose() { _controller.dispose(); super.dispose(); }
+  void dispose() { _controller.dispose(); _focusNode.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     final r = widget.routine;
+    final theme = Theme.of(context);
     return AlertDialog(
       title: _PopupHeader(routine: r, isZh: widget.isZh),
-      content: TextField(
-        controller: _controller,
-        maxLines: 3,
-        decoration: InputDecoration(
-          hintText: widget.isZh ? '记录要点...（可选）' : 'Add a note... (optional)',
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      ),
+      content: _inputActive
+          ? TextField(
+              focusNode: _focusNode,
+              controller: _controller,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: widget.isZh ? '记录要点...（可选）' : 'Add a note... (optional)',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            )
+          : GestureDetector(
+              onTap: () {
+                setState(() => _inputActive = true);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _focusNode.requestFocus();
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                height: 100,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: theme.colorScheme.outlineVariant.withAlpha(80)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  widget.isZh ? '记录要点...（可选）' : 'Add a note... (optional)',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withAlpha(100)),
+                ),
+              ),
+            ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: Text(widget.isZh ? '跳过' : 'Skip')),
         FilledButton(onPressed: () => Navigator.pop(context, _controller.text.trim()), child: Text(widget.isZh ? '保存' : 'Save')),
@@ -205,8 +226,8 @@ class _BooleanNoteShellState extends State<_BooleanNoteShell> {
 
 Future<void> _showDurationPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<Map<String, dynamic>>(
-    context: context,
+  final result = await showDialogDeferred<Map<String, dynamic>>(
+    context,
     builder: (ctx) => _DurationShell(routine: routine, isZh: isZh, showNote: false),
   );
   if (result != null && context.mounted) {
@@ -218,8 +239,8 @@ Future<void> _showDurationPopup(BuildContext context, Routine routine, DateTime 
 
 Future<void> _showDurationOptionalTextPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<Map<String, dynamic>>(
-    context: context,
+  final result = await showDialogDeferred<Map<String, dynamic>>(
+    context,
     builder: (ctx) => _DurationShell(routine: routine, isZh: isZh, showNote: true),
   );
   if (result != null && context.mounted) {
@@ -240,7 +261,9 @@ class _DurationShell extends StatefulWidget {
 
 class _DurationShellState extends State<_DurationShell> {
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   late double _value;
+  bool _inputActive = false;
 
   @override
   void initState() {
@@ -249,7 +272,7 @@ class _DurationShellState extends State<_DurationShell> {
   }
 
   @override
-  void dispose() { _controller.dispose(); super.dispose(); }
+  void dispose() { _controller.dispose(); _focusNode.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -288,14 +311,38 @@ class _DurationShellState extends State<_DurationShell> {
           ),
           if (widget.showNote) ...[
             const SizedBox(height: 12),
-            TextField(
-              controller: _controller,
-              maxLines: 2,
-              decoration: InputDecoration(
-                hintText: widget.isZh ? '补充说明...（可选）' : 'Add a note... (optional)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            if (_inputActive)
+              TextField(
+                focusNode: _focusNode,
+                controller: _controller,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: widget.isZh ? '补充说明...（可选）' : 'Add a note... (optional)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: () {
+                  setState(() => _inputActive = true);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _focusNode.requestFocus();
+                  });
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 80,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    widget.isZh ? '补充说明...（可选）' : 'Add a note... (optional)',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withAlpha(100)),
+                  ),
+                ),
               ),
-            ),
           ],
         ],
       ),
@@ -314,8 +361,8 @@ class _DurationShellState extends State<_DurationShell> {
 
 Future<void> _showNumberPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<Map<String, dynamic>>(
-    context: context,
+  final result = await showDialogDeferred<Map<String, dynamic>>(
+    context,
     builder: (ctx) => _NumberShell(routine: routine, isZh: isZh),
   );
   if (result != null && context.mounted) {
@@ -335,6 +382,7 @@ class _NumberShell extends StatefulWidget {
 class _NumberShellState extends State<_NumberShell> {
   final _controller = TextEditingController();
   late double _value;
+  bool _inputActive = false;
 
   @override
   void initState() {
@@ -370,14 +418,24 @@ class _NumberShellState extends State<_NumberShell> {
               const SizedBox(width: 8),
               SizedBox(
                 width: 130,
-                child: TextField(
-                  controller: _controller,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600),
-                  decoration: const InputDecoration(border: InputBorder.none),
-                  onChanged: (v) { final n = int.tryParse(v); if (n != null) _value = n.toDouble(); },
-                ),
+                child: _inputActive
+                    ? TextField(
+                        autofocus: true,
+                        controller: _controller,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600),
+                        decoration: const InputDecoration(border: InputBorder.none),
+                        onChanged: (v) { final n = int.tryParse(v); if (n != null) _value = n.toDouble(); },
+                      )
+                    : GestureDetector(
+                        onTap: () => setState(() => _inputActive = true),
+                        child: Text(
+                          _controller.text,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
               ),
               const SizedBox(width: 8),
               IconButton(onPressed: () => _updateValue((_value + inc).clamp((r.trackingMin ?? 0).toDouble(), (r.trackingMax ?? 99999).toDouble())), icon: const Icon(Icons.add_circle_outline)),
@@ -403,8 +461,8 @@ class _NumberShellState extends State<_NumberShell> {
 Future<void> _showTimePopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
   final now = TimeOfDay.now();
-  final result = await showDialog<TimeOfDay>(
-    context: context,
+  final result = await showDialogDeferred<TimeOfDay>(
+    context,
     builder: (ctx) => _TimePickerShell(routine: routine, isZh: isZh, initial: now),
   );
   if (result != null && context.mounted) {
@@ -459,8 +517,8 @@ class _TimePickerShellState extends State<_TimePickerShell> {
 
 Future<void> _showScalePopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<int?>(
-    context: context,
+  final result = await showDialogDeferred<int?>(
+    context,
     builder: (ctx) => _ScaleShell(routine: routine, isZh: isZh, showNote: false),
   );
   if (result != null && context.mounted) {
@@ -470,8 +528,8 @@ Future<void> _showScalePopup(BuildContext context, Routine routine, DateTime dat
 
 Future<void> _showScaleOptionalTextPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<Map<String, dynamic>>(
-    context: context,
+  final result = await showDialogDeferred<Map<String, dynamic>>(
+    context,
     builder: (ctx) => _ScaleShell(routine: routine, isZh: isZh, showNote: true),
   );
   if (result != null && context.mounted) {
@@ -493,10 +551,12 @@ class _ScaleShell extends StatefulWidget {
 class _ScaleShellState extends State<_ScaleShell> {
   int? _selected;
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  bool _inputActive = false;
   static const _emoji = ['😫', '😕', '😐', '🙂', '😊'];
 
   @override
-  void dispose() { _controller.dispose(); super.dispose(); }
+  void dispose() { _controller.dispose(); _focusNode.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -531,14 +591,38 @@ class _ScaleShellState extends State<_ScaleShell> {
           ),
           if (widget.showNote) ...[
             const SizedBox(height: 12),
-            TextField(
-              controller: _controller,
-              maxLines: 2,
-              decoration: InputDecoration(
-                hintText: widget.isZh ? '补充说明...（可选）' : 'Add a note... (optional)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            if (_inputActive)
+              TextField(
+                focusNode: _focusNode,
+                controller: _controller,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: widget.isZh ? '补充说明...（可选）' : 'Add a note... (optional)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: () {
+                  setState(() => _inputActive = true);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _focusNode.requestFocus();
+                  });
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 80,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    widget.isZh ? '补充说明...（可选）' : 'Add a note... (optional)',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withAlpha(100)),
+                  ),
+                ),
               ),
-            ),
           ],
         ],
       ),
@@ -559,8 +643,8 @@ class _ScaleShellState extends State<_ScaleShell> {
 
 Future<void> _showTextRequiredPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<Map<String, dynamic>>(
-    context: context,
+  final result = await showDialogDeferred<Map<String, dynamic>>(
+    context,
     builder: (ctx) => _TextRequiredShell(routine: routine, isZh: isZh, fieldCount: 1),
   );
   if (result != null && context.mounted) {
@@ -577,8 +661,8 @@ Future<void> _showTextRequiredPopup(BuildContext context, Routine routine, DateT
 
 Future<void> _showMultiTextRequiredPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<Map<String, dynamic>>(
-    context: context,
+  final result = await showDialogDeferred<Map<String, dynamic>>(
+    context,
     builder: (ctx) => _TextRequiredShell(routine: routine, isZh: isZh, fieldCount: 3),
   );
   if (result != null && context.mounted) {
@@ -604,16 +688,22 @@ class _TextRequiredShell extends StatefulWidget {
 
 class _TextRequiredShellState extends State<_TextRequiredShell> {
   final _controllers = <TextEditingController>[];
+  final _focusNodes = <FocusNode>[];
   final _tagController = TextEditingController();
+  final _tagFocusNode = FocusNode();
   bool _hasText = false;
+  // Per-field activation: index 0..fieldCount-1 for content fields, fieldCount for tag.
+  late List<bool> _fieldActive;
 
   @override
   void initState() {
     super.initState();
+    _fieldActive = List.filled(widget.fieldCount + 1, false);
     for (var i = 0; i < widget.fieldCount; i++) {
       final c = TextEditingController();
       c.addListener(_checkHasText);
       _controllers.add(c);
+      _focusNodes.add(FocusNode());
     }
   }
 
@@ -625,7 +715,9 @@ class _TextRequiredShellState extends State<_TextRequiredShell> {
   @override
   void dispose() {
     for (final c in _controllers) { c.dispose(); }
+    for (final f in _focusNodes) { f.dispose(); }
     _tagController.dispose();
+    _tagFocusNode.dispose();
     super.dispose();
   }
 
@@ -643,28 +735,77 @@ class _TextRequiredShellState extends State<_TextRequiredShell> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ...List.generate(widget.fieldCount, (i) => Padding(
-            padding: EdgeInsets.only(bottom: i < widget.fieldCount - 1 ? 8 : 0),
-            child: TextField(
-              controller: _controllers[i],
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: widget.isZh ? '写下你的想法...' : 'Write your thoughts...',
-                labelText: widget.fieldCount > 1 ? '${i + 1}.' : null,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          )),
+          ...List.generate(widget.fieldCount, (i) {
+            final hint = widget.isZh ? '写下你的想法...' : 'Write your thoughts...';
+            return Padding(
+              padding: EdgeInsets.only(bottom: i < widget.fieldCount - 1 ? 8 : 0),
+              child: _fieldActive[i]
+                  ? TextField(
+                      focusNode: _focusNodes[i],
+                      controller: _controllers[i],
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: hint,
+                        labelText: widget.fieldCount > 1 ? '${i + 1}.' : null,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    )
+                  : GestureDetector(
+                      onTap: () {
+                        setState(() => _fieldActive[i] = true);
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) _focusNodes[i].requestFocus();
+                        });
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 80,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          widget.fieldCount > 1 ? '${i + 1}. $hint' : hint,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withAlpha(100)),
+                        ),
+                      ),
+                    ),
+            );
+          }),
           const SizedBox(height: 10),
-          TextField(
-            controller: _tagController,
-            maxLines: 1,
-            decoration: InputDecoration(
-              hintText: widget.isZh ? '自定义标签 (逗号分隔)' : 'Custom tags (comma separated)',
-              isDense: true,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
+          _fieldActive[widget.fieldCount]
+              ? TextField(
+                  focusNode: _tagFocusNode,
+                  controller: _tagController,
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    hintText: widget.isZh ? '自定义标签 (逗号分隔)' : 'Custom tags (comma separated)',
+                    isDense: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                )
+              : GestureDetector(
+                  onTap: () {
+                    setState(() => _fieldActive[widget.fieldCount] = true);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _tagFocusNode.requestFocus();
+                    });
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      widget.isZh ? '自定义标签 (逗号分隔)' : 'Custom tags (comma separated)',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withAlpha(100)),
+                    ),
+                  ),
+                ),
         ],
       ),
       actions: [
@@ -682,8 +823,8 @@ class _TextRequiredShellState extends State<_TextRequiredShell> {
 
 Future<void> _showStreakPopup(BuildContext context, Routine routine, DateTime date) async {
   final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
-  final result = await showDialog<bool>(
-    context: context,
+  final result = await showDialogDeferred<bool>(
+    context,
     builder: (ctx) => AlertDialog(
       title: _PopupHeader(routine: routine, isZh: isZh),
       content: Column(
