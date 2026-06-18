@@ -41,9 +41,10 @@ class MockPathProvider extends PathProviderPlatform {
 
 class _FakeStorageService extends StorageService {
   @override
-  Future<void> init() async {
-    // Skip database init; use lightweight stub for restore flow tests
-  }
+  Future<void> init() async {}
+
+  @override
+  Future<void> clearAll() async {}
 }
 
 void main() {

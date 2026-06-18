@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/theme.dart';
@@ -16,6 +17,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/moment/moment_screen.dart';
 import 'screens/cherished/cherished_memory_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/onboarding/onboarding_flow.dart';
 import 'l10n/app_localizations.dart';
 import 'models/entry.dart';
 import 'core/services/export_service.dart';
@@ -89,7 +91,7 @@ class StalioApp extends StatelessWidget {
             locale: localeProvider.locale,
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            home: const MainScreen(),
+            home: _OnboardingGate(storageService: storageService),
           );
         },
       ),
@@ -108,6 +110,8 @@ class _MainScreenState extends State<MainScreen> {
   int _navIndex = 0;
   late final List<Widget> _screens;
 
+  static const _prewarmChannel = MethodChannel('stalio/prewarm');
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +120,12 @@ class _MainScreenState extends State<MainScreen> {
       const InsightsScreen(),
       const SettingsScreen(),
     ];
+    // Warm UIPasteboard privacy cache after first frame so all subsequent
+    // TextField focus events are instant. The ~500ms block happens during
+    // initial load, invisible to the user, rather than during a tap gesture.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _prewarmChannel.invokeMethod<void>('prewarm').catchError((_) {});
+    });
   }
 
   @override
@@ -136,5 +146,38 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
     );
+  }
+}
+
+class _OnboardingGate extends StatefulWidget {
+  final StorageService storageService;
+  const _OnboardingGate({required this.storageService});
+
+  @override
+  State<_OnboardingGate> createState() => _OnboardingGateState();
+}
+
+class _OnboardingGateState extends State<_OnboardingGate> {
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.storageService.isOnboardingComplete()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => OnboardingFlow(onComplete: () {
+              widget.storageService.setOnboardingComplete(true);
+              Navigator.of(context).pop();
+            }),
+          ),
+        );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const MainScreen();
   }
 }

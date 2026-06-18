@@ -12,6 +12,7 @@ import 'core/services/iap_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+
   try {
     await Firebase.initializeApp();
     FlutterError.onError = (error) {

@@ -113,7 +113,7 @@ void main() {
       final dataStr = utf8.decode(dataFile.content as List<int>);
       final data = json.decode(dataStr) as Map<String, dynamic>;
 
-      expect(data['entries'], isNotEmpty); // seed entries exist
+      expect(data['entries'], isEmpty); // seed entries disabled
     });
 
     test('Restore ZIP imports data correctly', () async {

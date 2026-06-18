@@ -194,7 +194,8 @@ void main() {
     await tester.tap(libraryBtn);
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.byType(TextField), findsOneWidget);
+    // Search bar is tap-to-activate — no TextField on initial library render.
+    expect(find.byType(TextField), findsNothing);
     expect(find.text('Take vitamins'), findsOneWidget);
   });
 }

@@ -10,11 +10,12 @@ import '../../models/routine.dart';
 import '../../models/entry.dart';
 import '../../widgets/calendar_widget.dart';
 import '../../widgets/entry_card.dart';
-import '../../widgets/routine_note_dialog.dart';
+import '../../widgets/habit_popups/habit_popup_factory.dart';
 import '../moment/entry_detail_screen.dart';
 import '../settings/settings_screen.dart';
 import '../add_entry_screen.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/services/storage_service.dart';
 
 /// My Day — daily dashboard with calendar navigation + today's overview
 class HomeScreen extends StatefulWidget {
@@ -36,6 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadCalendarPrefs();
+    // Schedule carry-forward check once, after the first frame, NOT from build().
+    // Calling addPostFrameCallback from build() on iOS can leave a ModalBarrier
+    // from the carry-forward dialog in an invisible state that absorbs all touches.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scheduleCarryForwardCheck(context.read<EntryProvider>());
+    });
   }
 
   Future<void> _loadCalendarPrefs() async {
@@ -187,8 +195,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final isPastDay = !isToday && _selectedDate.isBefore(DateTime.now());
     final entryProvider = context.read<EntryProvider>();
 
-    _scheduleCarryForwardCheck(entryProvider);
-
     // Get selected day's entries
     final dayEntries = entries.where((e) =>
       _isSameDay(e.createdAt, _selectedDate)
@@ -296,12 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
             return Column(
-              children: pending
-                  .map((r) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _buildRoutineChecklistItem(context, r),
-                      ))
-                  .toList(),
+              children: _buildPendingWithTooltips(context, pending),
             );
           }),
           // Completed: one consolidated icon row
@@ -319,12 +320,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Icon(Icons.check_circle, color: const Color(0xFFE0B84F), size: 18),
                       const SizedBox(width: 8),
-                      Wrap(
-                        spacing: 6,
-                        children: done
-                            .map((r) => Text(r.effectiveIcon,
-                                style: const TextStyle(fontSize: 22)))
-                            .toList(),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 6,
+                          children: done
+                              .map((r) => Text(r.effectiveIcon,
+                                  style: const TextStyle(fontSize: 22)))
+                              .toList(),
+                        ),
                       ),
                     ],
                   ),
@@ -386,6 +389,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  static const _tooltipMessages = {
+    TrackingUiType.boolean: ('👆 Tap to check', '点击即可'),
+    TrackingUiType.booleanOptionalText: ('👆 Tap to check + optional note', '点击标记，选填笔记'),
+    TrackingUiType.number: ('🔢 Enter your number', '输入数字'),
+    TrackingUiType.duration: ('⏱ Set your duration', '设置时长'),
+    TrackingUiType.textRequired: ('✏️ Write your note', '写下笔记'),
+    TrackingUiType.multiTextRequired: ('✏️ Fill in your entries', '填写内容'),
+  };
+
+  List<Widget> _buildPendingWithTooltips(BuildContext context, List<Routine> pending) {
+    final seenTypes = <TrackingUiType>{};
+    final widgets = <Widget>[];
+    final prefs = context.read<StorageService>();
+
+    for (final r in pending) {
+      final type = r.trackingUiType;
+      final msg = _tooltipMessages[type];
+      final isNew = msg != null && !seenTypes.contains(type) && !prefs.isTooltipSeen(type.name);
+      if (isNew) seenTypes.add(type);
+
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _buildRoutineChecklistItem(context, r),
+      ));
+
+      if (isNew) {
+        widgets.add(
+          _FirstTimeTooltip(
+            typeName: type.name,
+            messageEn: msg!.$1,
+            messageZh: msg.$2,
+          ),
+        );
+      }
+    }
+    return widgets;
+  }
+
   Widget _buildRoutineChecklistItem(BuildContext context, Routine routine, {bool readOnly = false}) {
     final isCompleted = routine.isCompletedOn(_selectedDate);
     final isMissed = readOnly && !isCompleted;
@@ -398,21 +439,105 @@ class _HomeScreenState extends State<HomeScreen> {
           color: isCompleted ? const Color(0xFFE0B84F) : Colors.grey,
         ),
         title: Text(
-          routine.displayName(l.localeName == 'zh'),
+          routine.displayName(AppLocalizations.of(context)!.localeName == 'zh'),
           style: TextStyle(
             color: isMissed ? Colors.red[300] : null,
           ),
         ),
+        trailing: IconButton(
+          icon: const Icon(Icons.help_outline, size: 20),
+          color: Colors.grey[400],
+          onPressed: () => _showHabitHelp(context, routine),
+        ),
         onTap: readOnly
             ? null
             : () async {
-                await showDialog(
-                  context: context,
-                  builder: (_) => RoutineNoteDialog(routine: routine, date: _selectedDate),
-                );
+                await showHabitPopup(context, routine, _selectedDate);
               },
       ),
     );
+  }
+
+  void _showHabitHelp(BuildContext context, Routine routine) {
+    final unit = routine.trackingUnit ?? '';
+    final target = routine.trackingTarget;
+    final min = routine.trackingMin;
+    final max = routine.trackingMax;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Text(routine.icon ?? routine.effectiveIcon, style: const TextStyle(fontSize: 28)),
+                const SizedBox(width: 10),
+                Expanded(child: Text(routine.displayName(false), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600))),
+              ]),
+              const SizedBox(height: 16),
+              _helpRow(theme, 'Type', _typeDescription(routine.trackingUiType)),
+              if (target != null) _helpRow(theme, 'Target', '${target.toInt()} $unit'),
+              if (min != null && max != null) _helpRow(theme, 'Range', '${min.toInt()} - ${max.toInt()} $unit'),
+              if (routine.twoMinVersionEn != null) _helpRow(theme, '2-min version', routine.twoMinVersionEn!),
+              if (routine.difficulty != null) _helpRow(theme, 'Difficulty', routine.difficulty!),
+              const SizedBox(height: 16),
+              Text('How to use:', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text(_usageTip(routine.trackingUiType), style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withAlpha(180))),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _helpRow(ThemeData theme, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(children: [
+        SizedBox(width: 80, child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey))),
+        Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
+      ]),
+    );
+  }
+
+  String _typeDescription(TrackingUiType type) {
+    return switch (type) {
+      TrackingUiType.boolean => 'One tap',
+      TrackingUiType.booleanOptionalText => 'One tap + optional note',
+      TrackingUiType.duration => 'Duration',
+      TrackingUiType.durationOptionalText => 'Duration + optional note',
+      TrackingUiType.number => 'Counter',
+      TrackingUiType.time => 'Time',
+      TrackingUiType.scale => '1-5 Rating',
+      TrackingUiType.scaleOptionalText => '1-5 Rating + optional note',
+      TrackingUiType.textRequired => 'Must write',
+      TrackingUiType.multiTextRequired => 'Multi-field',
+      TrackingUiType.streak => 'Streak',
+    };
+  }
+
+  String _usageTip(TrackingUiType type) {
+    return switch (type) {
+      TrackingUiType.boolean => "Tap the habit to check it off.",
+      TrackingUiType.booleanOptionalText => "Tap to check, then optionally add a note.",
+      TrackingUiType.duration => "Use +/- to set minutes, or start the timer.",
+      TrackingUiType.number => "Use +/- or type to enter your count.",
+      TrackingUiType.time => "Tap to pick a specific time.",
+      TrackingUiType.scale => "Pick a rating from 1 to 5.",
+      TrackingUiType.textRequired => "You must write something to check off.",
+      TrackingUiType.multiTextRequired => "Multiple fields must be filled to complete.",
+      TrackingUiType.streak => "Confirm each day to maintain your streak.",
+      _ => "Tap the habit to start tracking.",
+    };
   }
 
   void _scheduleCarryForwardCheck(EntryProvider entryProvider) {
@@ -434,36 +559,43 @@ class _HomeScreenState extends State<HomeScreen> {
     final todayKey = 'carry_forward_dialog_${today.year}_${today.month}_${today.day}';
     if (prefs.getBool(todayKey) == true) return;
 
-    final l = AppLocalizations.of(context)!;
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.carryForwardDialogTitle),
-        content: Text(l.carryForwardDialogMessage(items.length)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.carryForwardNo),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.carryForwardYes),
-          ),
-        ],
-      ),
-    );
-
-    if (!mounted) return;
+    // Mark as shown BEFORE displaying — prevents the dialog re-appearing if the
+    // app is restarted before the user responds (which on iOS would freeze the app
+    // again due to the invisible ModalBarrier pattern).
     await prefs.setBool(todayKey, true);
 
-    if (result == true) {
-      await entryProvider.carryForwardItems(items);
-      if (mounted) {
-        setState(() {});
+    if (!mounted) return;
+    final l = AppLocalizations.of(context)!;
+
+    // Defer to next frame so any in-flight provider rebuilds have settled before
+    // the dialog's ModalBarrier is installed. Calling showDialog mid-rebuild on
+    // iOS leaves the barrier active but the dialog content off-screen, making
+    // the app appear frozen.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final result = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.carryForwardDialogTitle),
+          content: Text(l.carryForwardDialogMessage(items.length)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.carryForwardNo),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.carryForwardYes),
+            ),
+          ],
+        ),
+      );
+      if (result == true && mounted) {
+        await entryProvider.carryForwardItems(items);
+        if (mounted) setState(() {});
       }
-    }
+    });
   }
 
   void _onEntryTapped(Entry entry) {
@@ -530,6 +662,65 @@ class _OnboardingBanner extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FirstTimeTooltip extends StatefulWidget {
+  final String typeName;
+  final String messageEn;
+  final String messageZh;
+  const _FirstTimeTooltip({required this.typeName, required this.messageEn, required this.messageZh});
+  @override
+  State<_FirstTimeTooltip> createState() => _FirstTimeTooltipState();
+}
+
+class _FirstTimeTooltipState extends State<_FirstTimeTooltip> {
+  bool _visible = true;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_visible) return const SizedBox.shrink();
+    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withAlpha(15),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.colorScheme.primary.withAlpha(50)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.lightbulb_outline, size: 16, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                isZh ? widget.messageZh : widget.messageEn,
+                style: TextStyle(fontSize: 13, color: theme.colorScheme.primary, fontWeight: FontWeight.w500),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                context.read<StorageService>().setTooltipSeen(widget.typeName);
+                setState(() => _visible = false);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('Got it', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -49,9 +49,10 @@ class TagRepository {
     required String color,
     String category = 'custom',
     String? categoryId,
+    String? id,
   }) async {
     final tag = Tag(
-      id: _uuid.v4(),
+      id: id ?? _uuid.v4(),
       name: name,
       nameEn: nameEn,
       color: color,

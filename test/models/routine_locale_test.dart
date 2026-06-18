@@ -51,7 +51,7 @@ void main() {
 
     test('keyword auto-detection works', () {
       final cat = autoDetectCategory('冥想练习');
-      expect(cat, RoutineCategory.mindfulness);
+      expect(cat, RoutineCategory.mind);
     });
 
     test('unknown keywords return null', () {

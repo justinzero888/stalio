@@ -44,6 +44,9 @@ class MockPathProvider extends PathProviderPlatform {
 class _TestableStorageService extends StorageService {
   @override
   Future<void> init() async {}
+
+  @override
+  Future<void> clearAll() async {}
 }
 
 void main() {

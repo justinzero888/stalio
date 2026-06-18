@@ -42,6 +42,7 @@ class TagProvider extends ChangeNotifier {
     required String color,
     String category = 'custom',
     String? categoryId,
+    String? id,
   }) async {
     _error = null;
     
@@ -52,6 +53,7 @@ class TagProvider extends ChangeNotifier {
         color: color,
         category: category,
         categoryId: categoryId,
+        id: id,
       );
       _tags.add(tag);
       _tags.sort((a, b) => a.name.compareTo(b.name));

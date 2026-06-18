@@ -67,17 +67,17 @@ class StorageService {
       }
     }
 
-    // Seed demo entries for validation
-    final entries = await getEntries();
-    if (entries.isEmpty) {
-      final seeded = _prefs.getBool('seed_entries_done');
-      if (seeded != true) {
-        for (final e in _getSeedEntries()) {
-          await addEntry(e);
-        }
-        await _prefs.setBool('seed_entries_done', true);
-      }
-    }
+    // Seed demo entries for validation (disabled — entries should come from habit tracking)
+    // final entries = await getEntries();
+    // if (entries.isEmpty) {
+    //   final seeded = _prefs.getBool('seed_entries_done');
+    //   if (seeded != true) {
+    //     for (final e in _getSeedEntries()) {
+    //       await addEntry(e);
+    //     }
+    //     await _prefs.setBool('seed_entries_done', true);
+    //   }
+    // }
   }
 
   /// System tags — always exist, locked from editing/deletion
@@ -100,47 +100,123 @@ class StorageService {
     ];
   }
 
-  /// Get default routines — seeded from routine_setup_file_0513.json
-  /// Only 3 are active by default: drink water, read, write a note
+  /// Get default routines — from stalio_habits_library_v2.csv (54 habits)
+  /// 9 are active by default (isDefaultBundle=true per onboarding design):
+  /// H001, H003, H004, H009, H010, H023, H033, H038, H051
   List<Routine> _getDefaultRoutines() {
-    // Active: only these 3 nameEn values
-    const activeHabits = {'Drink water', 'Read 15 minutes', 'Write a note'};
-    
-    bool isActiveDefault(String nameEn) => activeHabits.contains(nameEn);
-    
-    return [
-      Routine(id: 'routine_seed_1', name: '喝水', nameEn: 'Drink water', icon: '💧', frequency: RoutineFrequency.daily, isActive: true, reminderTime: '10:00', description: '多数成年人都处于轻度脱水而不自知。影响精力、专注与消化。', descriptionEn: 'Most adults are mildly dehydrated without noticing. Affects energy, focus, digestion.', category: RoutineCategory.health, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_2', name: '维生素 / 服药', nameEn: 'Vitamins / medication', icon: '💊', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '08:00', description: '没有固定时间，依从性容易下降。', descriptionEn: 'Compliance falls off without a consistent time anchor.', category: RoutineCategory.health, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_3', name: '出门走走', nameEn: 'Step outside', icon: '🌤️', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '09:00', description: '清晨的自然光帮助调节睡眠节律，户外时间也能切实地降低压力。', descriptionEn: 'Morning natural light regulates the sleep cycle. Time outdoors measurably lowers stress.', category: RoutineCategory.health, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_4', name: '用牙线', nameEn: 'Floss', icon: '🪥', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '22:00', description: '容易被忽略；长期来看，对牙齿与心血管健康都有好处。', descriptionEn: 'Often skipped; protects long-term dental and cardiovascular health.', category: RoutineCategory.health, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_5', name: '走 5000 步', nameEn: 'Walk 5000 steps', icon: '🚶', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '19:00', description: '每日活动保护心血管与关节；久坐的日子会累积。', descriptionEn: 'Daily movement protects cardiovascular and joint health; sedentary days compound.', category: RoutineCategory.fitness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_6', name: '拉伸 5 分钟', nameEn: 'Stretch 5 minutes', icon: '🧘', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '20:00', description: '维持关节灵活度，化解久坐带来的紧张。', descriptionEn: 'Maintains joint range and releases tension built up from sitting.', category: RoutineCategory.fitness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_7', name: '运动', nameEn: 'Workout', icon: '🏋️', frequency: RoutineFrequency.daily, isActive: false, description: '长期的力量与有氧训练，让身体保持能干的状态。方式自定。', descriptionEn: 'Strength and cardio over time keep the body capable. Pick your own kind.', category: RoutineCategory.fitness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_8', name: '走楼梯', nameEn: 'Take the stairs', icon: '🪜', frequency: RoutineFrequency.daily, isActive: false, description: '日常的小选择，一年下来累积成可观的活动量。', descriptionEn: 'Small daily choices add up to substantial movement over a year.', category: RoutineCategory.fitness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_9', name: '好好吃一餐', nameEn: 'Eat one good meal', icon: '🍽️', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '12:00', description: '多数日子都在匆忙进食。一顿用心的餐，是可以做到的。', descriptionEn: 'Most days slip into eating on the go. One intentional meal is reachable.', category: RoutineCategory.nutrition, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_10', name: '吃蔬菜', nameEn: 'Eat vegetables', icon: '🥬', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '12:00', description: '容易被忽略；却是最有循证依据的饮食习惯。', descriptionEn: 'Easy to skip; the single most evidence-backed dietary habit.', category: RoutineCategory.nutrition, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_11', name: '在家做饭', nameEn: 'Cook at home', icon: '👨‍🍳', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '18:00', description: '做饭既是滋养，也是日常的小小创造。', descriptionEn: 'Cooking is both nourishment and a small daily creative act.', category: RoutineCategory.nutrition, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_12', name: '不省早餐', nameEn: 'Don\'t skip breakfast', icon: '🥐', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '08:00', description: '早餐稳定血糖，定下一天的精力。', descriptionEn: 'Morning food stabilizes blood sugar and sets the day\'s energy.', category: RoutineCategory.nutrition, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_13', name: '11 点前睡觉', nameEn: 'Sleep before 11 PM', icon: '😴', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '22:30', description: '对许多生理系统来说，固定的入睡时间比总时长更重要。', descriptionEn: 'Consistent bedtime matters more than total hours for many systems.', category: RoutineCategory.sleep, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_14', name: '固定时间起床', nameEn: 'Wake at a consistent time', icon: '⏰', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '07:00', description: '每天同一时刻起床，比固定的入睡时间更能稳定生理节律。', descriptionEn: 'Same wake time daily anchors circadian rhythm — even more important than bedtime.', category: RoutineCategory.sleep, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_15', name: '睡前 30 分钟放松', nameEn: 'Wind down 30 minutes before bed', icon: '🌙', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '22:00', description: '一个清晰的过渡，告诉身体该休息了。', descriptionEn: 'A clear transition tells the body it\'s time to sleep.', category: RoutineCategory.sleep, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_16', name: '读书 15 分钟', nameEn: 'Read 15 minutes', icon: '📖', frequency: RoutineFrequency.daily, isActive: true, reminderTime: '21:00', description: '非屏幕的注意力恢复。每天 15 分钟，一生可以累积数百本书。', descriptionEn: 'Non-screen attention recovery. 15 minutes daily compounds into hundreds of books over a life.', category: RoutineCategory.mindfulness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_17', name: '静坐 / 冥想', nameEn: 'Sit quietly / meditate', icon: '🧘', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '07:30', description: '静下来的时刻越来越少。哪怕 5 分钟，也能降低日常的紧张。', descriptionEn: 'Stillness is increasingly rare. Even 5 minutes lowers baseline stress.', category: RoutineCategory.mindfulness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_18', name: '练习', nameEn: 'Practice', icon: '🎯', frequency: RoutineFrequency.daily, isActive: false, description: '日复一日的练习，胜过偶尔的长时间投入。可以是语言、乐器、技艺。', descriptionEn: 'Daily practice beats long sessions for skill acquisition. Pick: language, instrument, craft.', category: RoutineCategory.mindfulness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_19', name: '学一样新的事', nameEn: 'Learn something new', icon: '💡', frequency: RoutineFrequency.daily, isActive: false, description: '每日维持的好奇心，日积月累成为内功。', descriptionEn: 'Curiosity sustained daily becomes mastery over years.', category: RoutineCategory.mindfulness, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_20', name: '写一则笔记', nameEn: 'Write a note', icon: '✍️', frequency: RoutineFrequency.daily, isActive: true, reminderTime: '21:30', description: '笔记本身就是练习。一句话也算。', descriptionEn: 'The journal is the practice. Even a sentence counts.', category: RoutineCategory.reflection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_21', name: '记录心情', nameEn: 'Log mood', icon: '📊', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '21:00', description: '记录心情，建立情绪词汇，时间一长会浮现规律。', descriptionEn: 'Mood awareness builds emotional vocabulary and surfaces patterns over time.', category: RoutineCategory.reflection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_22', name: '写下一件感激的事', nameEn: 'Note one gratitude', icon: '🙏', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '22:00', description: '感恩练习是所有正向心理干预中，研究最一致有效的。', descriptionEn: 'Gratitude practice has the most replicated mental-health evidence of any positive intervention.', category: RoutineCategory.reflection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_23', name: '晚间省思', nameEn: 'Evening reflection', icon: '🌅', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '21:30', description: '一日省思，让所学沉淀，让一天清清楚楚地结束。', descriptionEn: 'Daily review consolidates learning and lets the day close.', category: RoutineCategory.reflection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_24', name: '睡前不看手机', nameEn: 'No phone in bed', icon: '📵', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '22:00', description: '睡前看手机扰乱褪黑素分泌和入睡过程，是回报最大的屏幕习惯。', descriptionEn: 'Phone use before sleep disrupts melatonin and sleep onset. The single highest-leverage screen habit.', category: RoutineCategory.restraint, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_25', name: '中午前不刷社交', nameEn: 'No social media before noon', icon: '🚫', frequency: RoutineFrequency.daily, isActive: false, description: '清晨的输入塑造一天的注意力。守住早晨，回报丰厚。', descriptionEn: 'Morning consumption shapes the day\'s attention. A protected morning is high-leverage.', category: RoutineCategory.restraint, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_26', name: '今日不饮酒', nameEn: 'No alcohol today', icon: '🍺', frequency: RoutineFrequency.daily, isActive: false, description: '即便少量饮酒，也影响睡眠和心情，并长期累积风险。', descriptionEn: 'Even small daily drinking affects sleep, mood, and accumulates risk.', category: RoutineCategory.restraint, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_27', name: '今日不吃甜食', nameEn: 'No sugar today', icon: '🍬', frequency: RoutineFrequency.daily, isActive: false, description: '糖让精力起伏。对多数人来说，先有觉察比绝对戒断更重要。', descriptionEn: 'Sugar destabilizes energy. For most people, awareness matters more than strict elimination.', category: RoutineCategory.restraint, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_28', name: '给家人打电话', nameEn: 'Call family', icon: '📞', frequency: RoutineFrequency.weekly, isActive: false, reminderTime: '16:00', scheduledDaysOfWeek: [7], description: '关系需要维护。许多人后悔没多给家人打电话。', descriptionEn: 'Relationships need maintenance. Many people regret not calling parents more.', category: RoutineCategory.connection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_29', name: '联系一位朋友', nameEn: 'Reach out to a friend', icon: '💬', frequency: RoutineFrequency.weekly, isActive: false, reminderTime: '10:00', scheduledDaysOfWeek: [6], description: '没有刻意的联系，友谊会慢慢淡了。', descriptionEn: 'Friendships drift without intentional contact.', category: RoutineCategory.connection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_30', name: '陪伴爱人', nameEn: 'Quality time with partner', icon: '❤️', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '18:30', description: '日常的用心陪伴，比偶尔的盛大表达更能维持长久的关系。', descriptionEn: 'Daily intentional presence predicts long-term satisfaction more than grand gestures.', category: RoutineCategory.connection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
-      Routine(id: 'routine_seed_31', name: '专心陪孩子', nameEn: 'Be present with kids', icon: '👶', frequency: RoutineFrequency.daily, isActive: false, reminderTime: '18:00', description: '孩子记住的是陪伴本身，而非具体在做什么。多数父母需要的提醒，是「停下工作」。', descriptionEn: 'Children remember presence more than activities. Most parents need a reminder to stop working.', category: RoutineCategory.connection, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+    final now = DateTime.now();
+
+    // CSV field indices (0-indexed):
+    // 0=habit_id, 1=nameEn, 2=nameCn, 3=categoryGroupEn, 4=categoryGroupCn,
+    // 5=categoryNameEn, 6=categoryNameCn, 7=trackingUiType, 8=trackingUnit,
+    // 9=trackingDefaultTarget, 10=trackingMin, 11=trackingMax, 12=trackingIncrement,
+    // 13=timeOfDay, 14=estimatedDurationMin, 15=difficulty, 16=isDefaultBundle,
+    // 17=twoMinVersionEn, 18=twoMinVersionCn, 19=customTargetAllowed
+    final rows = [
+      ['H001','Drink water','喝水','Health & Body','身','Health','养','number','glasses','8','1','20','1','Throughout day','1','easy','TRUE','Drink one full glass of water right now','现在就喝一杯水','TRUE'],
+      ['H002','Vitamins / medication','维生素 / 服药','Health & Body','身','Health','养','boolean','yes/no',null,null,null,null,'Morning',null,null,'FALSE','Put your supplements next to something you do every morning','把补充剂放在你每天早上都会做的事情旁边','FALSE'],
+      ['H003','Step outside','出门走走','Health & Body','身','Health','养','boolean','yes/no',null,null,null,null,'Any',null,null,'TRUE','Open your front door and stand outside for 30 seconds','打开家门，在外面站 30 秒','FALSE'],
+      ['H004','Floss','用牙线','Health & Body','身','Health','养','boolean','yes/no',null,null,null,null,'Evening',null,null,'TRUE','Floss just one gap between two teeth — that\'s a start','只清洁两颗牙之间的缝隙 — 这就是开始','FALSE'],
+      ['H005','Walk 5000 steps','走 5000 步','Health & Body','身','Fitness','劲','number','steps','5000','1000','30000','500','Throughout day','20','easy','FALSE','Walk around the block — that\'s about 1,000 steps','绕着街区走一圈 — 大约 1,000 步','TRUE'],
+      ['H006','Stretch 5 minutes','拉伸 5 分钟','Health & Body','身','Fitness','劲','duration','minutes','5','1','60','1','Any','5','easy','FALSE','Stand up and do 5 slow neck rolls in each direction','站起来，向每个方向慢慢转动脖子 5 次','TRUE'],
+      ['H007','Workout','运动','Health & Body','身','Fitness','劲','boolean_optional_text','yes/no',null,null,null,null,'Any','30','moderate','FALSE','Do 10 bodyweight squats right now','现在做 10 个自重深蹲','FALSE'],
+      ['H008','Take the stairs','走楼梯','Health & Body','身','Fitness','劲','boolean','yes/no',null,null,null,null,'Any','2','easy','FALSE','Take the stairs for just one floor today','今天只走一层楼梯','FALSE'],
+      ['H009','Eat one good meal','好好吃一餐','Health & Body','身','Nutrition','食','boolean','yes/no',null,null,null,null,'Evening',null,'easy','TRUE','Ask yourself: did I eat one real meal today?','问自己：今天我吃了一顿正经饭吗？','FALSE'],
+      ['H010','Eat vegetables','吃蔬菜','Health & Body','身','Nutrition','食','boolean','yes/no',null,null,null,null,'Any',null,'easy','TRUE','Eat one piece of fruit or a handful of raw vegetables right now','现在吃一块水果或一把生蔬菜','FALSE'],
+      ['H011','Cook at home','在家做饭','Health & Body','身','Nutrition','食','boolean_optional_text','yes/no',null,null,null,null,'Any','30','moderate','FALSE','Make tomorrow\'s lunch tonight — it takes 5 minutes','今晚做明天的午餐 — 只需 5 分钟','FALSE'],
+      ['H012','Don\'t skip breakfast','不省早餐','Health & Body','身','Nutrition','食','boolean','yes/no',null,null,null,null,'Morning','5','easy','FALSE','Eat one bite of anything within the next hour','接下来一小时内吃一口任何东西','FALSE'],
+      ['H013','Track calories','记录热量','Health & Body','身','Nutrition','食','number','calories','2000','500','5000','50','Any','5','hard','FALSE','Just log what you eat for breakfast today — nothing else','只记录今天早餐吃了什么 — 其他都不用','TRUE'],
+      ['H014','Sleep before 11 PM','11 点前睡觉','Health & Body','心','Sleep','息','time','bedtime',null,null,null,null,'Evening',null,'easy','FALSE','Go to bed 15 minutes earlier than last night','比昨晚早睡 15 分钟','FALSE'],
+      ['H015','Wake at consistent time','固定时间起床','Health & Body','心','Sleep','息','time','wake_time',null,null,null,null,'Morning',null,'easy','FALSE','Set your alarm for the same time tomorrow — even weekend','把明天的闹钟设在同一个时间 — 即使是周末','FALSE'],
+      ['H016','Wind down 30 min before bed','睡前 30 分钟放松','Health & Body','心','Sleep','息','boolean','yes/no',null,null,null,null,'Evening','30','moderate','FALSE','Dim every light in your home right now','现在把家里所有的灯调暗','FALSE'],
+      ['H017','Sleep quality log','记录睡眠质量','Health & Body','心','Sleep','息','scale','1-5 rating',null,'1','5','1','Morning',null,'easy','FALSE','Rate last night\'s sleep from 1 to 5 right now','现在给昨晚的睡眠评分 1 到 5','FALSE'],
+      ['H018','Read 15 minutes','读书 15 分钟','Health & Body','心','Mind','心','duration','minutes','15','5','120','5','Evening','15','moderate','FALSE','Read the next page of whatever book is nearest you','读离你最近的书下一页','TRUE'],
+      ['H019','Sit quietly / meditate','静坐 / 冥想','Health & Body','心','Mind','心','duration','minutes','5','1','60','1','Morning','8','moderate','FALSE','Sit still for 2 minutes and count your breaths','静坐 2 分钟，数呼吸','FALSE'],
+      ['H020','Practice gratitude','练习感恩','Health & Body','心','Mind','心','multi_text_required','items','3','1','10','1','Evening','3','easy','FALSE','Name one thing that went well today','说出今天顺利的一件事','FALSE'],
+      ['H021','Learn something new','学一样新的事','Health & Body','心','Mind','心','text_required','text',null,null,null,null,'Evening','2','easy','FALSE','Ask someone: \'What\'s one thing you learned recently?\'','问别人：\'你最近学到的一件事是什么？\'','FALSE'],
+      ['H022','Zen garden coloring','禅意涂色','Health & Body','心','Mind','心','duration','minutes','15','5','60','5','Evening','15','moderate','FALSE','Doodle on a piece of paper for 2 minutes','在一张纸上涂鸦 2 分钟','TRUE'],
+      ['H023','Write a note','写一则笔记','Health & Body','心','Reflection','省','text_required','text',null,null,null,null,'Any','3','easy','TRUE','Write one sentence about how you feel right now','写一句话描述你现在的感受','FALSE'],
+      ['H024','Log mood','记录心情','Health & Body','心','Reflection','省','scale_optional_text','1-5 rating',null,'1','5','1','Evening',null,'easy','FALSE','Rate your day from 1 to 5 right now','现在给你的一天评分 1 到 5','FALSE'],
+      ['H025','Note one gratitude','写下一件感激的事','Health & Body','心','Reflection','省','text_required','text',null,null,null,null,'Evening',null,'easy','FALSE','Think of one thing that went well today — that\'s it','想一件今天顺利的事 — 就这样','FALSE'],
+      ['H026','Evening reflection','晚间省思','Health & Body','心','Reflection','省','text_required','text',null,null,null,null,'Evening','5','easy','FALSE','Write down one thing you learned about yourself today','写下你今天了解到的关于自己的一件事','FALSE'],
+      ['H027','Call family','给家人打电话','Social & Relationship','缘','Connection','缘','boolean_optional_text','yes/no',null,null,null,null,'Any','10','easy','FALSE','Call one family member for just 2 minutes','给一位家人打电话，只说 2 分钟','FALSE'],
+      ['H028','Reach out to a friend','联系一位朋友','Social & Relationship','缘','Connection','缘','boolean_optional_text','yes/no',null,null,null,null,'Any','5','easy','FALSE','Text one person right now who you haven\'t spoken to this week','现在就给本周没说过话的人发条消息','FALSE'],
+      ['H029','Quality time with partner','陪伴爱人','Social & Relationship','缘','Connection','缘','duration_optional_text','minutes','15','5','120','5','Evening','15','easy','FALSE','Put phones away and talk to your partner for 5 minutes','把手机收起来，和伴侣交谈 5 分钟','TRUE'],
+      ['H030','Be present with kids','专心陪孩子','Social & Relationship','缘','Connection','缘','duration_optional_text','minutes','15','5','60','5','Evening','15','easy','FALSE','Put your phone in another room and ask your child about their day','把手机放在另一个房间，问你的孩子今天过得怎么样','TRUE'],
+      ['H031','Device-free family time','无电子设备的家庭时光','Social & Relationship','缘','Connection','缘','duration_optional_text','minutes','30','15','180','15','Evening','30','moderate','FALSE','Put every phone in the house in another room for 30 minutes','把家里所有手机放在另一个房间 30 分钟','TRUE'],
+      ['H032','Act of kindness','做一件善事','Social & Relationship','缘','Connection','缘','boolean_optional_text','yes/no',null,null,null,null,'Any','5','easy','FALSE','Send one genuine compliment to someone right now','现在就给某人发一句真诚的赞美','FALSE'],
+      ['H033','No phone in bed','睡前不看手机','Social & Relationship','缘','Restraint','戒','boolean','yes/no',null,null,null,null,'Evening',null,'easy','TRUE','Charge your phone on the other side of the room tonight','今晚把手机放在房间另一头充电','FALSE'],
+      ['H034','No social media before noon','中午前不刷社交','Social & Relationship','缘','Restraint','戒','boolean','yes/no',null,null,null,null,'Morning',null,'moderate','FALSE','Delete social apps from your home screen — put them in a folder','把社交应用从主屏幕删除 — 放进一个文件夹','FALSE'],
+      ['H035','No alcohol today','今日不饮酒','Social & Relationship','缘','Restraint','戒','boolean','yes/no',null,null,null,null,'Evening',null,'moderate','FALSE','Pour a non-alcoholic drink tonight instead','今晚倒一杯无酒精饮料代替','FALSE'],
+      ['H036','No sugar today','今日不吃甜食','Social & Relationship','缘','Restraint','戒','boolean','yes/no',null,null,null,null,'Any',null,'moderate','FALSE','Skip one sugary thing you usually have today','今天跳过你通常吃的某样含糖食物','FALSE'],
+      ['H037','No smoking today','今日不吸烟','Social & Relationship','缘','Restraint','戒','streak','days',null,null,null,null,'Any',null,'hard','FALSE','Don\'t have one cigarette today — just today','今天不抽一支烟 — 就今天','FALSE'],
+      ['H038','No-spend day','今日不花钱','Social & Relationship','缘','Restraint','戒','boolean','yes/no',null,null,null,null,'Any',null,'moderate','TRUE','Decide right now: will today be a no-spend day?','现在决定：今天要不要不花钱？','FALSE'],
+      ['H039','Screen time limit','限制屏幕时间','Social & Relationship','缘','Restraint','戒','number','minutes','120','15','480','15','Any',null,'moderate','FALSE','Set a 30-minute timer before opening any social app tonight','今晚打开任何社交应用前设置一个 30 分钟计时器','TRUE'],
+      ['H040','Language practice','语言练习','Productivity & Growth','长','Growth','长','duration_optional_text','minutes','15','5','60','5','Morning','15','moderate','FALSE','Open Duolingo and complete one lesson right now','打开 Duolingo 完成一课','TRUE'],
+      ['H041','Skill study','技能学习','Productivity & Growth','长','Growth','长','duration_optional_text','minutes','30','15','120','15','Any','30','moderate','FALSE','Open your course and do 5 minutes — just 5','打开你的课程做 5 分钟 — 就 5 分钟','TRUE'],
+      ['H042','Review top 3 priorities','回顾 3 件要事','Productivity & Growth','长','Growth','长','multi_text_required','text',null,null,null,null,'Morning','5','easy','FALSE','Write down the one most important thing for today','写下今天最重要的一件事','FALSE'],
+      ['H043','Creative work','创意工作','Productivity & Growth','长','Growth','长','duration_optional_text','minutes','30','10','120','10','Any','30','moderate','FALSE','Make one small thing right now — even a rough draft','现在做一件小事 — 即使是草稿','TRUE'],
+      ['H044','Learning log','学习日志','Productivity & Growth','长','Growth','长','text_required','text',null,null,null,null,'Evening','2','easy','FALSE','Write one sentence: what\'s one thing I noticed or learned today?','写一句话：我今天注意到或学到的一件事是什么？','FALSE'],
+      ['H045','Deep work block','深度工作','Productivity & Growth','长','Growth','长','duration_optional_text','minutes','120','25','240','25','Morning','120','hard','FALSE','Close all browser tabs except one and work for 25 minutes','关闭除一个之外的所有浏览器标签，工作 25 分钟','TRUE'],
+      ['H046','Log spending','记录支出','Financial','财','Financial','财','multi_text_required','text',null,null,null,null,'Evening','5','moderate','FALSE','Log the last thing you spent money on','记录你最后花钱买的东西','FALSE'],
+      ['H047','Transfer to savings','转存储蓄','Financial','财','Financial','财','number','amount (\u0024)',null,null,null,null,'Morning','2','easy','FALSE',r'Transfer $1 to savings right now — seriously, just $1','现在转账 1 美元到储蓄 — 认真的，就 1 美元','TRUE'],
+      ['H048','Weekly budget review','每周预算回顾','Financial','财','Financial','财','text_required','text',null,null,null,null,'Any','15','moderate','FALSE','Open your bank app and look at this week\'s spending right now','打开你的银行应用看看这周的支出','FALSE'],
+      ['H049','Invest today','今日投资','Financial','财','Financial','财','boolean_optional_text','yes/no',null,null,null,null,'Any','5','moderate','FALSE','Open your investment app and look at your account balance','打开你的投资应用看看账户余额','FALSE'],
+      ['H050','Credit score check','检查信用评分','Financial','财','Financial','财','boolean_optional_text','yes/no',null,null,null,null,'Any','5','easy','FALSE','Check your credit score right now — most banks show it for free','现在查看你的信用评分 — 大多数银行免费提供','FALSE'],
+      ['H051','Make the bed','整理床铺','Home & Environment','居','Environment','居','boolean','yes/no',null,null,null,null,'Morning','3','easy','TRUE','Pull up your duvet right now — that counts','现在拉平你的被子 — 这就算','FALSE'],
+      ['H052','Tidy for 10 min','打扫 10 分钟','Home & Environment','居','Environment','居','duration','minutes','10','5','30','5','Evening','10','easy','FALSE','Set a 10-minute timer and just start — anywhere','设置一个 10 分钟的计时器，随便从哪里开始','FALSE'],
+      ['H053','Declutter one thing','断舍离一件物品','Home & Environment','居','Environment','居','boolean_optional_text','yes/no',null,null,null,null,'Any','5','easy','FALSE','Pick up the first thing you see that you don\'t need — let it go','拿起你看到的第一件不需要的东西 — 让它走','FALSE'],
+      ['H054','Gardening','园艺','Home & Environment','居','Environment','居','duration_optional_text','minutes','10','5','60','5','Any','10','easy','FALSE','Water one plant right now','现在给一株植物浇水','TRUE'],
     ];
+
+    // Emoji icons mapping
+    const icons = {
+      'H001': '💧', 'H002': '💊', 'H003': '🌿', 'H004': '🪥',
+      'H005': '🚶', 'H006': '🧘', 'H007': '🏋️', 'H008': '🪜',
+      'H009': '🍽️', 'H010': '🥗', 'H011': '👨‍🍳', 'H012': '🥐',
+      'H013': '🔢', 'H014': '😴', 'H015': '⏰', 'H016': '🌙',
+      'H017': '💤', 'H018': '📖', 'H019': '🧘', 'H020': '🙏',
+      'H021': '📚', 'H022': '🎨', 'H023': '✏️', 'H024': '😊',
+      'H025': '🙏', 'H026': '🌅', 'H027': '📞', 'H028': '💬',
+      'H029': '❤️', 'H030': '👶', 'H031': '📵', 'H032': '💝',
+      'H033': '📵', 'H034': '🚫', 'H035': '🍺', 'H036': '🍬',
+      'H037': '🚭', 'H038': '💰', 'H039': '📱', 'H040': '🗣️',
+      'H041': '📚', 'H042': '🎯', 'H043': '🎨', 'H044': '📝',
+      'H045': '🧠', 'H046': '💳', 'H047': '🏦', 'H048': '📊',
+      'H049': '📈', 'H050': '🏦', 'H051': '🛏️', 'H052': '🧹',
+      'H053': '📦', 'H054': '🌱',
+    };
+
+    return rows.map((r) {
+      final category = parseCsvCategory(r[5] as String?);
+      final trackingUiType = parseTrackingUiType(r[7] as String?);
+      final isDefaultBundle = parseCsvBool(r[16] as String?);
+      return Routine(
+        id: 'seed_${r[0]}',
+        name: r[2] as String,
+        nameEn: r[1] as String,
+        icon: icons[r[0]] ?? '⭐',
+        frequency: RoutineFrequency.daily,
+        isActive: isDefaultBundle,
+        category: category,
+        trackingUiType: trackingUiType,
+        categoryGroup: r[3] as String?,
+        trackingTarget: parseCsvDouble(r[9] as String?),
+        trackingMin: parseCsvDouble(r[10] as String?),
+        trackingMax: parseCsvDouble(r[11] as String?),
+        trackingIncrement: parseCsvDouble(r[12] as String?),
+        trackingUnit: r[8] as String?,
+        timeOfDay: (r[13] as String?),
+        difficulty: (r[15] as String?),
+        estimatedDuration: parseCsvInt(r[14] as String?),
+        isDefaultBundle: isDefaultBundle,
+        customTargetAllowed: parseCsvBool(r[19] as String?),
+        twoMinVersionEn: r[17] as String?,
+        twoMinVersionCn: r[18] as String?,
+        createdAt: now,
+        updatedAt: now,
+      );
+    }).toList();
   }
 
   List<TagCategory> _getDefaultCategories() {
@@ -150,11 +226,14 @@ class StorageService {
       TagCategory(id: 'cat_fitness', name: '劲', nameEn: 'Fitness', color: '#FF9500', icon: '🏃', sortOrder: 1, createdAt: now),
       TagCategory(id: 'cat_nutrition', name: '食', nameEn: 'Nutrition', color: '#FF3B30', icon: '🥗', sortOrder: 2, createdAt: now),
       TagCategory(id: 'cat_sleep', name: '息', nameEn: 'Sleep', color: '#5856D6', icon: '😴', sortOrder: 3, createdAt: now),
-      TagCategory(id: 'cat_mindfulness', name: '心', nameEn: 'Mindfulness', color: '#AF52DE', icon: '🧘', sortOrder: 4, createdAt: now),
+      TagCategory(id: 'cat_mind', name: '心', nameEn: 'Mind', color: '#AF52DE', icon: '🧘', sortOrder: 4, createdAt: now),
       TagCategory(id: 'cat_reflection', name: '省', nameEn: 'Reflection', color: '#007AFF', icon: '💭', sortOrder: 5, createdAt: now),
       TagCategory(id: 'cat_restraint', name: '戒', nameEn: 'Restraint', color: '#FF2D55', icon: '🛡️', sortOrder: 6, createdAt: now),
-      TagCategory(id: 'cat_connection', name: '缘', nameEn: 'Connection', color: '#FF9500', icon: '👥', sortOrder: 7, createdAt: now),
-      TagCategory(id: 'cat_other', name: '杂', nameEn: 'Other', color: '#9E9E9E', icon: '⭐', sortOrder: 8, createdAt: now),
+      TagCategory(id: 'cat_connection', name: '缘', nameEn: 'Connection', color: '#FF6B35', icon: '👥', sortOrder: 7, createdAt: now),
+      TagCategory(id: 'cat_growth', name: '长', nameEn: 'Growth', color: '#64D2FF', icon: '🌱', sortOrder: 8, createdAt: now),
+      TagCategory(id: 'cat_financial', name: '财', nameEn: 'Financial', color: '#30D158', icon: '💰', sortOrder: 9, createdAt: now),
+      TagCategory(id: 'cat_environment', name: '居', nameEn: 'Environment', color: '#FFD60A', icon: '🏠', sortOrder: 10, createdAt: now),
+      TagCategory(id: 'cat_other', name: '杂', nameEn: 'Other', color: '#9E9E9E', icon: '⭐', sortOrder: 11, createdAt: now),
     ];
   }
 
@@ -468,6 +547,20 @@ class StorageService {
       routineMap['category'] = map['category'];
       routineMap['iconImagePath'] = map['icon_image_path'];
       routineMap['voiceEnabled'] = map['voice_enabled'] == 1;
+      routineMap['trackingUiType'] = map['tracking_ui_type'] ?? 'boolean';
+      routineMap['categoryGroup'] = map['category_group'];
+      routineMap['trackingTarget'] = map['tracking_target'];
+      routineMap['trackingMin'] = map['tracking_min'];
+      routineMap['trackingMax'] = map['tracking_max'];
+      routineMap['trackingIncrement'] = map['tracking_increment'];
+      routineMap['trackingUnit'] = map['tracking_unit'];
+      routineMap['timeOfDay'] = map['time_of_day'];
+      routineMap['difficulty'] = map['difficulty'];
+      routineMap['estimatedDuration'] = map['estimated_duration'];
+      routineMap['isDefaultBundle'] = map['is_default_bundle'] == 1;
+      routineMap['customTargetAllowed'] = map['custom_target_allowed'] == null ? true : map['custom_target_allowed'] == 1;
+      routineMap['twoMinVersionEn'] = map['two_min_version_en'];
+      routineMap['twoMinVersionCn'] = map['two_min_version_cn'];
       routineMap['scheduledDaysOfWeek'] = map['scheduled_days_of_week'] != null
           ? (json.decode(map['scheduled_days_of_week'] as String) as List<dynamic>)
               .map((e) => e as int)
@@ -517,6 +610,20 @@ class StorageService {
             : null,
         'scheduled_date': routine.scheduledDate?.toIso8601String(),
         'voice_enabled': routine.voiceEnabled ? 1 : 0,
+        'tracking_ui_type': routine.trackingUiType.name,
+        'category_group': routine.categoryGroup,
+        'tracking_target': routine.trackingTarget,
+        'tracking_min': routine.trackingMin,
+        'tracking_max': routine.trackingMax,
+        'tracking_increment': routine.trackingIncrement,
+        'tracking_unit': routine.trackingUnit,
+        'time_of_day': routine.timeOfDay,
+        'difficulty': routine.difficulty,
+        'estimated_duration': routine.estimatedDuration,
+        'is_default_bundle': routine.isDefaultBundle ? 1 : 0,
+        'custom_target_allowed': routine.customTargetAllowed ? 1 : 0,
+        'two_min_version_en': routine.twoMinVersionEn,
+        'two_min_version_cn': routine.twoMinVersionCn,
         'created_at': routine.createdAt.toIso8601String(),
         'updated_at': routine.updatedAt.toIso8601String(),
       }, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -555,6 +662,21 @@ class StorageService {
             ? json.encode(routine.scheduledDaysOfWeek)
             : null,
         'scheduled_date': routine.scheduledDate?.toIso8601String(),
+        'voice_enabled': routine.voiceEnabled ? 1 : 0,
+        'tracking_ui_type': routine.trackingUiType.name,
+        'category_group': routine.categoryGroup,
+        'tracking_target': routine.trackingTarget,
+        'tracking_min': routine.trackingMin,
+        'tracking_max': routine.trackingMax,
+        'tracking_increment': routine.trackingIncrement,
+        'tracking_unit': routine.trackingUnit,
+        'time_of_day': routine.timeOfDay,
+        'difficulty': routine.difficulty,
+        'estimated_duration': routine.estimatedDuration,
+        'is_default_bundle': routine.isDefaultBundle ? 1 : 0,
+        'custom_target_allowed': routine.customTargetAllowed ? 1 : 0,
+        'two_min_version_en': routine.twoMinVersionEn,
+        'two_min_version_cn': routine.twoMinVersionCn,
         'updated_at': routine.updatedAt.toIso8601String(),
       }, where: 'id = ?', whereArgs: [routine.id]);
 
@@ -621,6 +743,26 @@ class StorageService {
     await _prefs.setString('theme', theme);
   }
 
+  // ============ ONBOARDING ============
+
+  bool isOnboardingComplete() {
+    return _prefs.getBool('onboarding_complete') ?? false;
+  }
+
+  Future<void> setOnboardingComplete(bool complete) async {
+    await _prefs.setBool('onboarding_complete', complete);
+  }
+
+  // ============ TOOLTIPS ============
+
+  bool isTooltipSeen(String key) {
+    return _prefs.getBool('tooltip_$key') ?? false;
+  }
+
+  Future<void> setTooltipSeen(String key) async {
+    await _prefs.setBool('tooltip_$key', true);
+  }
+
   // ============ EXPORT / IMPORT ============
 
   Future<Map<String, dynamic>> exportData() async {
@@ -680,10 +822,13 @@ class StorageService {
     final String extension = backupFile.path.split('.').last.toLowerCase();
 
     if (extension == 'json') {
+      try { await clearAll(); } catch (_) {}
       final String content = await backupFile.readAsString();
       final Map<String, dynamic> data = json.decode(content);
       await importData(data);
+      try { await _ensureDefaultCategories(); } catch (_) {}
     } else if (extension == 'zip') {
+      try { await clearAll(); } catch (_) {}
       final inputStream = InputFileStream(backupFile.path);
       Archive? archive;
       try {
@@ -698,6 +843,8 @@ class StorageService {
           // Release memory before processing media files
           archive.removeFile(dataFile);
         }
+
+        try { await _ensureDefaultCategories(); } catch (_) {}
 
         // Phase B: Stream media & avatar files to disk
         final docDir = await getApplicationDocumentsDirectory();
@@ -765,6 +912,16 @@ class StorageService {
     }
   }
 
+  /// Re-seed tag categories after a restore if the table is empty
+  Future<void> _ensureDefaultCategories() async {
+    final categories = await getTagCategories();
+    if (categories.isEmpty) {
+      for (final cat in _getDefaultCategories()) {
+        await addTagCategory(cat);
+      }
+    }
+  }
+
   Future<void> clearAll() async {
     final db = await _dbService.database;
     await db.delete('entries');
@@ -772,7 +929,10 @@ class StorageService {
     await db.delete('entry_tags');
     await db.delete('routines');
     await db.delete('completions');
+    await db.delete('tag_categories');
     await _prefs.remove('sqlite_migrated');
+    await _prefs.remove('seed_entries_done');
+    await _prefs.remove('onboarding_complete');
   }
 
   /// Seed entries with tags and emotions for demo/validation

@@ -12,11 +12,29 @@ enum RoutineCategory {
   fitness,
   nutrition,
   sleep,
-  mindfulness,
+  mind,
   reflection,
   restraint,
   connection,
+  growth,
+  financial,
+  environment,
   other,
+}
+
+/// Tracking UI type — determines which popup dialog is shown when tapping a habit
+enum TrackingUiType {
+  boolean,
+  booleanOptionalText,
+  duration,
+  durationOptionalText,
+  number,
+  time,
+  scale,
+  scaleOptionalText,
+  textRequired,
+  multiTextRequired,
+  streak,
 }
 
 /// Map category → icon asset path
@@ -25,10 +43,13 @@ const Map<RoutineCategory, String> kCategoryIconPath = {
   RoutineCategory.fitness: 'assets/icons/fitness.png',
   RoutineCategory.nutrition: 'assets/icons/nutrition.png',
   RoutineCategory.sleep: 'assets/icons/sleep.png',
-  RoutineCategory.mindfulness: 'assets/icons/mind.png',
+  RoutineCategory.mind: 'assets/icons/mind.png',
   RoutineCategory.reflection: 'assets/icons/reflection.png',
   RoutineCategory.restraint: 'assets/icons/restraint.png',
   RoutineCategory.connection: 'assets/icons/connection.png',
+  RoutineCategory.growth: 'assets/icons/growth.png',
+  RoutineCategory.financial: 'assets/icons/financial.png',
+  RoutineCategory.environment: 'assets/icons/environment.png',
   RoutineCategory.other: 'assets/icons/other.png',
 };
 
@@ -38,10 +59,13 @@ const Map<RoutineCategory, String> kCategoryEmoji = {
   RoutineCategory.fitness: '🏃',
   RoutineCategory.nutrition: '🥗',
   RoutineCategory.sleep: '😴',
-  RoutineCategory.mindfulness: '🧘',
+  RoutineCategory.mind: '🧘',
   RoutineCategory.reflection: '💭',
   RoutineCategory.restraint: '🛡️',
   RoutineCategory.connection: '👥',
+  RoutineCategory.growth: '🌱',
+  RoutineCategory.financial: '💰',
+  RoutineCategory.environment: '🏠',
   RoutineCategory.other: '⭐',
 };
 
@@ -52,10 +76,13 @@ String routineCategoryName(RoutineCategory cat, bool isZh) {
     case RoutineCategory.fitness: return isZh ? '劲' : 'Fitness';
     case RoutineCategory.nutrition: return isZh ? '食' : 'Nutrition';
     case RoutineCategory.sleep: return isZh ? '息' : 'Sleep';
-    case RoutineCategory.mindfulness: return isZh ? '心' : 'Mind';
+    case RoutineCategory.mind: return isZh ? '心' : 'Mind';
     case RoutineCategory.reflection: return isZh ? '省' : 'Reflection';
     case RoutineCategory.restraint: return isZh ? '戒' : 'Restraint';
     case RoutineCategory.connection: return isZh ? '缘' : 'Connection';
+    case RoutineCategory.growth: return isZh ? '长' : 'Growth';
+    case RoutineCategory.financial: return isZh ? '财' : 'Financial';
+    case RoutineCategory.environment: return isZh ? '居' : 'Environment';
     case RoutineCategory.other: return isZh ? '杂' : 'Other';
   }
 }
@@ -66,10 +93,13 @@ const Map<RoutineCategory, List<String>> kCategoryKeywords = {
   RoutineCategory.fitness: ['步', 'steps', '运动', 'exercise', '跑', 'run', '健身', 'gym', '瑜伽', 'yoga', '走路', 'walk', '拉伸', 'stretch'],
   RoutineCategory.nutrition: ['喝水', 'water', '饮食', 'diet', '营养', 'nutrition', '蔬菜', 'vegetable', '水果', 'fruit', '吃菜', 'greens'],
   RoutineCategory.sleep: ['睡眠', 'sleep', '睡觉', '休息', 'rest', '早睡', '起床', 'wake'],
-  RoutineCategory.mindfulness: ['冥想', 'meditation', '呼吸', 'breath', '正念', 'mindful', '阅读', 'read', '书', 'book'],
+  RoutineCategory.mind: ['冥想', 'meditation', '呼吸', 'breath', '正念', 'mindful', '阅读', 'read', '书', 'book'],
   RoutineCategory.reflection: ['感恩', 'gratitude', '日记', 'journal', '反思', 'reflect', '写作', 'write'],
   RoutineCategory.restraint: ['戒', 'quit', '戒烟', '戒酒', '戒糖', '克制', 'restrain', '戒除', '不吃'],
   RoutineCategory.connection: ['朋友', 'friend', '家人', 'family', '聊天', 'chat', '社交', 'social', '电话', 'call', '联络', 'connect'],
+  RoutineCategory.growth: ['学习', 'learn', '技能', 'skill', '语言', 'language', '创意', 'creative', '工作', 'work'],
+  RoutineCategory.financial: ['钱', 'money', '支出', 'spend', '储蓄', 'saving', '预算', 'budget', '投资', 'invest'],
+  RoutineCategory.environment: ['打扫', 'clean', '整理', 'tidy', '床', 'bed', '园艺', 'garden', '植物', 'plant'],
 };
 
 /// Auto-detect category from routine name.
@@ -84,6 +114,59 @@ RoutineCategory? autoDetectCategory(String name) {
     }
   }
   return null;
+}
+
+/// Parse CSV category_name_en string to RoutineCategory enum
+RoutineCategory? parseCsvCategory(String? categoryName) {
+  if (categoryName == null) return null;
+  switch (categoryName.toLowerCase()) {
+    case 'health': return RoutineCategory.health;
+    case 'fitness': return RoutineCategory.fitness;
+    case 'nutrition': return RoutineCategory.nutrition;
+    case 'sleep': return RoutineCategory.sleep;
+    case 'mind': return RoutineCategory.mind;
+    case 'reflection': return RoutineCategory.reflection;
+    case 'restraint': return RoutineCategory.restraint;
+    case 'connection': return RoutineCategory.connection;
+    case 'growth': return RoutineCategory.growth;
+    case 'financial': return RoutineCategory.financial;
+    case 'environment': return RoutineCategory.environment;
+    default: return RoutineCategory.other;
+  }
+}
+
+/// Parse CSV tracking_ui_type string to TrackingUiType enum
+TrackingUiType parseTrackingUiType(String? typeStr) {
+  if (typeStr == null) return TrackingUiType.boolean;
+  switch (typeStr.toLowerCase().replaceAll('_', '')) {
+    case 'boolean': return TrackingUiType.boolean;
+    case 'booleanoptionaltext': return TrackingUiType.booleanOptionalText;
+    case 'duration': return TrackingUiType.duration;
+    case 'durationoptionaltext': return TrackingUiType.durationOptionalText;
+    case 'number': return TrackingUiType.number;
+    case 'time': return TrackingUiType.time;
+    case 'scale': return TrackingUiType.scale;
+    case 'scaleoptionaltext': return TrackingUiType.scaleOptionalText;
+    case 'textrequired': return TrackingUiType.textRequired;
+    case 'multitextrequired': return TrackingUiType.multiTextRequired;
+    case 'streak': return TrackingUiType.streak;
+    default: return TrackingUiType.boolean;
+  }
+}
+
+/// Parse CSV bool string to bool
+bool parseCsvBool(String? val) => val?.toLowerCase() == 'true';
+
+/// Parse CSV number/empty to double?
+double? parseCsvDouble(String? val) {
+  if (val == null || val.isEmpty) return null;
+  return double.tryParse(val);
+}
+
+/// Parse CSV number/empty to int?
+int? parseCsvInt(String? val) {
+  if (val == null || val.isEmpty) return null;
+  return int.tryParse(val);
 }
 
 /// Routine model - for daily habits tracking
@@ -109,6 +192,20 @@ class Routine {
   final DateTime? scheduledDate;          // Used when frequency==scheduled.
   final String? iconImagePath;
   final bool voiceEnabled;
+  final TrackingUiType trackingUiType;
+  final String? categoryGroup;
+  final double? trackingTarget;
+  final double? trackingMin;
+  final double? trackingMax;
+  final double? trackingIncrement;
+  final String? trackingUnit;
+  final String? timeOfDay;
+  final String? difficulty;
+  final int? estimatedDuration;
+  final bool isDefaultBundle;
+  final bool customTargetAllowed;
+  final String? twoMinVersionEn;
+  final String? twoMinVersionCn;
 
   Routine({
     required this.id,
@@ -132,6 +229,20 @@ class Routine {
     this.scheduledDate,
     this.iconImagePath,
     this.voiceEnabled = false,
+    this.trackingUiType = TrackingUiType.boolean,
+    this.categoryGroup,
+    this.trackingTarget,
+    this.trackingMin,
+    this.trackingMax,
+    this.trackingIncrement,
+    this.trackingUnit,
+    this.timeOfDay,
+    this.difficulty,
+    this.estimatedDuration,
+    this.isDefaultBundle = false,
+    this.customTargetAllowed = true,
+    this.twoMinVersionEn,
+    this.twoMinVersionCn,
   });
 
   /// Effective icon: explicit icon > category icon > auto-detect > fallback
@@ -207,6 +318,20 @@ class Routine {
     String? iconImagePath,
     bool clearIconImagePath = false,
     bool? voiceEnabled,
+    TrackingUiType? trackingUiType,
+    String? categoryGroup,
+    double? trackingTarget,
+    double? trackingMin,
+    double? trackingMax,
+    double? trackingIncrement,
+    String? trackingUnit,
+    String? timeOfDay,
+    String? difficulty,
+    int? estimatedDuration,
+    bool? isDefaultBundle,
+    bool? customTargetAllowed,
+    String? twoMinVersionEn,
+    String? twoMinVersionCn,
   }) {
     return Routine(
       id: id ?? this.id,
@@ -230,6 +355,20 @@ class Routine {
       scheduledDate: clearScheduledDate ? null : (scheduledDate ?? this.scheduledDate),
       iconImagePath: clearIconImagePath ? null : (iconImagePath ?? this.iconImagePath),
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
+      trackingUiType: trackingUiType ?? this.trackingUiType,
+      categoryGroup: categoryGroup ?? this.categoryGroup,
+      trackingTarget: trackingTarget ?? this.trackingTarget,
+      trackingMin: trackingMin ?? this.trackingMin,
+      trackingMax: trackingMax ?? this.trackingMax,
+      trackingIncrement: trackingIncrement ?? this.trackingIncrement,
+      trackingUnit: trackingUnit ?? this.trackingUnit,
+      timeOfDay: timeOfDay ?? this.timeOfDay,
+      difficulty: difficulty ?? this.difficulty,
+      estimatedDuration: estimatedDuration ?? this.estimatedDuration,
+      isDefaultBundle: isDefaultBundle ?? this.isDefaultBundle,
+      customTargetAllowed: customTargetAllowed ?? this.customTargetAllowed,
+      twoMinVersionEn: twoMinVersionEn ?? this.twoMinVersionEn,
+      twoMinVersionCn: twoMinVersionCn ?? this.twoMinVersionCn,
     );
   }
 
@@ -377,11 +516,26 @@ class Routine {
       'scheduledDate': scheduledDate?.toIso8601String(),
       'iconImagePath': iconImagePath,
       'voiceEnabled': voiceEnabled,
+      'trackingUiType': trackingUiType.name,
+      'categoryGroup': categoryGroup,
+      'trackingTarget': trackingTarget,
+      'trackingMin': trackingMin,
+      'trackingMax': trackingMax,
+      'trackingIncrement': trackingIncrement,
+      'trackingUnit': trackingUnit,
+      'timeOfDay': timeOfDay,
+      'difficulty': difficulty,
+      'estimatedDuration': estimatedDuration,
+      'isDefaultBundle': isDefaultBundle,
+      'customTargetAllowed': customTargetAllowed,
+      'twoMinVersionEn': twoMinVersionEn,
+      'twoMinVersionCn': twoMinVersionCn,
     };
   }
 
   factory Routine.fromJson(Map<String, dynamic> json) {
     final categoryStr = json['category'] as String?;
+    final trackingUiTypeStr = json['trackingUiType'] as String?;
     return Routine(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -419,6 +573,25 @@ class Routine {
           : null,
       iconImagePath: json['iconImagePath'] as String?,
       voiceEnabled: json['voiceEnabled'] as bool? ?? false,
+      trackingUiType: trackingUiTypeStr != null
+          ? TrackingUiType.values.firstWhere(
+              (t) => t.name == trackingUiTypeStr,
+              orElse: () => TrackingUiType.boolean,
+            )
+          : TrackingUiType.boolean,
+      categoryGroup: json['categoryGroup'] as String?,
+      trackingTarget: (json['trackingTarget'] as num?)?.toDouble(),
+      trackingMin: (json['trackingMin'] as num?)?.toDouble(),
+      trackingMax: (json['trackingMax'] as num?)?.toDouble(),
+      trackingIncrement: (json['trackingIncrement'] as num?)?.toDouble(),
+      trackingUnit: json['trackingUnit'] as String?,
+      timeOfDay: json['timeOfDay'] as String?,
+      difficulty: json['difficulty'] as String?,
+      estimatedDuration: json['estimatedDuration'] as int?,
+      isDefaultBundle: json['isDefaultBundle'] as bool? ?? false,
+      customTargetAllowed: json['customTargetAllowed'] as bool? ?? true,
+      twoMinVersionEn: json['twoMinVersionEn'] as String?,
+      twoMinVersionCn: json['twoMinVersionCn'] as String?,
     );
   }
 }

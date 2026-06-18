@@ -187,6 +187,38 @@ class RoutineProvider extends ChangeNotifier {
     }
   }
 
+  /// Explicitly set routine to active (used by onboarding)
+  Future<void> activateRoutine(String id) async {
+    final index = _routines.indexWhere((r) => r.id == id);
+    if (index != -1 && !_routines[index].isActive) {
+      try {
+        final updated = _routines[index].copyWith(isActive: true);
+        await _repository.update(updated);
+        _routines[index] = updated;
+        notifyListeners();
+      } catch (e) {
+        _error = e.toString();
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Explicitly set routine to inactive (used by onboarding)
+  Future<void> deactivateRoutine(String id) async {
+    final index = _routines.indexWhere((r) => r.id == id);
+    if (index != -1 && _routines[index].isActive) {
+      try {
+        final updated = _routines[index].copyWith(isActive: false);
+        await _repository.update(updated);
+        _routines[index] = updated;
+        notifyListeners();
+      } catch (e) {
+        _error = e.toString();
+        notifyListeners();
+      }
+    }
+  }
+
   /// Mark a routine as complete for a specific date (defaults to today)
   Future<void> completeRoutine(String id, {DateTime? date, int? count, String? notes}) async {
     _error = null;

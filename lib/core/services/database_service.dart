@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/models.dart';
 
 class DatabaseService {
-  static const int kSchemaVersion = 18;
+  static const int kSchemaVersion = 19;
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
@@ -305,6 +305,22 @@ class DatabaseService {
       await db.execute('DROP TABLE IF EXISTS card_folders');
       await db.execute('DROP TABLE IF EXISTS templates');
     }
+    if (oldVersion < 19) {
+      await db.execute('ALTER TABLE routines ADD COLUMN tracking_ui_type TEXT NOT NULL DEFAULT \'boolean\'');
+      await db.execute('ALTER TABLE routines ADD COLUMN category_group TEXT');
+      await db.execute('ALTER TABLE routines ADD COLUMN tracking_target REAL');
+      await db.execute('ALTER TABLE routines ADD COLUMN tracking_min REAL');
+      await db.execute('ALTER TABLE routines ADD COLUMN tracking_max REAL');
+      await db.execute('ALTER TABLE routines ADD COLUMN tracking_increment REAL');
+      await db.execute('ALTER TABLE routines ADD COLUMN tracking_unit TEXT');
+      await db.execute('ALTER TABLE routines ADD COLUMN time_of_day TEXT');
+      await db.execute('ALTER TABLE routines ADD COLUMN difficulty TEXT');
+      await db.execute('ALTER TABLE routines ADD COLUMN estimated_duration INTEGER');
+      await db.execute('ALTER TABLE routines ADD COLUMN is_default_bundle INTEGER NOT NULL DEFAULT 0');
+      await db.execute('ALTER TABLE routines ADD COLUMN custom_target_allowed INTEGER NOT NULL DEFAULT 1');
+      await db.execute('ALTER TABLE routines ADD COLUMN two_min_version_en TEXT');
+      await db.execute('ALTER TABLE routines ADD COLUMN two_min_version_cn TEXT');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -385,6 +401,21 @@ class DatabaseService {
         scheduled_days_of_week TEXT,
         scheduled_date TEXT,
         voice_enabled INTEGER NOT NULL DEFAULT 0,
+        ${version >= 19 ? '''
+        tracking_ui_type TEXT NOT NULL DEFAULT 'boolean',
+        category_group TEXT,
+        tracking_target REAL,
+        tracking_min REAL,
+        tracking_max REAL,
+        tracking_increment REAL,
+        tracking_unit TEXT,
+        time_of_day TEXT,
+        difficulty TEXT,
+        estimated_duration INTEGER,
+        is_default_bundle INTEGER NOT NULL DEFAULT 0,
+        custom_target_allowed INTEGER NOT NULL DEFAULT 1,
+        two_min_version_en TEXT,
+        two_min_version_cn TEXT,''' : ''}
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )

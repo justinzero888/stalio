@@ -19,7 +19,7 @@ class RoutineNoteDialog extends StatefulWidget {
 
   bool get _isWritingHabit =>
       routine.category == RoutineCategory.reflection ||
-      routine.category == RoutineCategory.mindfulness;
+      routine.category == RoutineCategory.mind;
 
   @override
   State<RoutineNoteDialog> createState() => _RoutineNoteDialogState();
@@ -101,11 +101,13 @@ class _RoutineNoteDialogState extends State<RoutineNoteDialog> {
       RoutineCategory.fitness => '#FF9500',
       RoutineCategory.nutrition => '#FF3B30',
       RoutineCategory.sleep => '#5856D6',
-      RoutineCategory.mindfulness => '#AF52DE',
+      RoutineCategory.mind => '#AF52DE',
       RoutineCategory.reflection => '#007AFF',
       RoutineCategory.restraint => '#FF2D55',
-      RoutineCategory.connection => '#FF9500',
-      RoutineCategory.other => '#9E9E9E',
+      RoutineCategory.connection => '#FF6B35',
+      RoutineCategory.growth => '#64D2FF',
+      RoutineCategory.financial => '#30D158',
+      RoutineCategory.environment => '#FFD60A',
       _ => '#9E9E9E',
     };
   }
@@ -117,12 +119,14 @@ class _RoutineNoteDialogState extends State<RoutineNoteDialog> {
       RoutineCategory.fitness => ['cat_fitness'],
       RoutineCategory.nutrition => ['cat_nutrition'],
       RoutineCategory.sleep => ['cat_sleep'],
-      RoutineCategory.mindfulness => ['cat_mindfulness'],
+      RoutineCategory.mind => ['cat_mind'],
       RoutineCategory.reflection => ['cat_reflection'],
       RoutineCategory.restraint => ['cat_restraint'],
       RoutineCategory.connection => ['cat_connection'],
-      RoutineCategory.other => ['cat_other'],
-      _ => [],
+      RoutineCategory.growth => ['cat_growth'],
+      RoutineCategory.financial => ['cat_financial'],
+      RoutineCategory.environment => ['cat_environment'],
+      _ => ['cat_other'],
     };
   }
 

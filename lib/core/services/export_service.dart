@@ -24,6 +24,7 @@ class ExportData {
   final List<Map<String, dynamic>> entries;
   final List<Map<String, dynamic>> tags;
   final List<Map<String, dynamic>> routines;
+  final Map<String, dynamic>? settings;
 
   ExportData({
     required this.version,
@@ -32,12 +33,14 @@ class ExportData {
     required this.entries,
     required this.tags,
     required this.routines,
+    this.settings,
   });
 
   factory ExportData.fromEntriesAndTagsAndRoutines({
     required List<Entry> entries,
     required List<Tag> tags,
     required List<Routine> routines,
+    Map<String, dynamic>? settings,
     String? userId,
   }) {
     return ExportData(
@@ -47,11 +50,12 @@ class ExportData {
       entries: entries.map((e) => e.toJson()).toList(),
       tags: tags.map((t) => t.toJson()).toList(),
       routines: routines.map((r) => r.toJson()).toList(),
+      settings: settings,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = <String, dynamic>{
       'version': version,
       'exportedAt': exportedAt.toIso8601String(),
       'userId': userId,
@@ -59,6 +63,8 @@ class ExportData {
       'tags': tags,
       'routines': routines,
     };
+    if (settings != null) json['settings'] = settings;
+    return json;
   }
 
   factory ExportData.fromJson(Map<String, dynamic> json) {
@@ -69,6 +75,7 @@ class ExportData {
       entries: (json['entries'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
       tags: (json['tags'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
       routines: (json['routines'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
+      settings: json['settings'] as Map<String, dynamic>?,
     );
   }
 }
@@ -101,10 +108,14 @@ class ExportService {
       }).toList();
     }
 
+    Map<String, dynamic>? settings;
+    try { settings = await _storage.getSettings(); } catch (_) { settings = null; }
+
     final exportData = ExportData.fromEntriesAndTagsAndRoutines(
       entries: filteredEntries,
       tags: tags,
       routines: routines,
+      settings: settings,
     );
 
     final docDir = docDirOverride != null
@@ -419,10 +430,14 @@ class ExportService {
     final tags = await _storage.getTags();
     final routines = await _storage.getRoutines();
 
+    Map<String, dynamic>? settings;
+    try { settings = await _storage.getSettings(); } catch (_) { settings = null; }
+
     final exportData = ExportData.fromEntriesAndTagsAndRoutines(
       entries: entries,
       tags: tags,
       routines: routines,
+      settings: settings,
     );
 
     final jsonStr = const JsonEncoder.withIndent('  ').convert(exportData.toJson());

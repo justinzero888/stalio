@@ -165,6 +165,11 @@ class EntryCard extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isRoutine = entry.type == EntryType.routine;
+    final routineName = isRoutine && entry.metadata != null
+        ? entry.metadata!['routineName'] as String?
+        : null;
+
     return Row(
       children: [
         _buildTypeIcon(),
@@ -176,6 +181,18 @@ class EntryCard extends StatelessWidget {
               ),
         ),
         const Spacer(),
+        if (routineName != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withAlpha(20),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              routineName,
+              style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
+            ),
+          ),
         if (entry.emotion != null)
           Text(entry.emotion!, style: const TextStyle(fontSize: 18)),
         const SizedBox(width: 4),
@@ -183,12 +200,6 @@ class EntryCard extends StatelessWidget {
           const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
         if (entry.tagIds.contains('tag_private'))
           const SizedBox(width: 4),
-        if (entry.tagIds.any((id) => id != 'tag_private')) ...[
-          Icon(Icons.label_outline, size: 14, color: Colors.grey[500]),
-          const SizedBox(width: 2),
-          Text('${entry.tagIds.where((id) => id != 'tag_private').length}',
-              style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-        ],
       ],
     );
   }

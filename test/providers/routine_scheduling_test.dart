@@ -353,7 +353,7 @@ void main() {
 
       test('autoDetectCategory works with Chinese keywords', () {
         expect(autoDetectCategory('喝水'), RoutineCategory.nutrition);
-        expect(autoDetectCategory('冥想'), RoutineCategory.mindfulness);
+        expect(autoDetectCategory('冥想'), RoutineCategory.mind);
         expect(autoDetectCategory('睡眠'), RoutineCategory.sleep);
       });
     });
