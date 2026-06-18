@@ -1,18 +1,19 @@
 # Stalio — Project Status
 
-> Stalio: Do. Tally. Grow. v1.0.0+9. Last updated: June 14, 2026
+> Stalio: Do. Tally. Grow. v1.0.0+10. Last updated: June 17, 2026
 
 ## Build
 
 | Metric | Status |
 |--------|--------|
-| `flutter analyze` | 0 errors, 117 pre-existing warnings |
-| `flutter test` | 321 tests pass, 2 skipped (habit dialog rewrite) |
-| GitHub CI | ✅ Green (analyze + test on push) |
-| Firebase Crashlytics | ✅ Integrated — degrades gracefully on sims |
-| iPhone 17 Pro | Running (Phase 7 UI deployed) |
-| iPad Air 11" M4 | Running (Phase 7 UI deployed) |
-| Android API 36 | Running (Phase 7 UI deployed) |
+| `flutter analyze` | 0 errors, pre-existing warnings only |
+| `flutter test` | 328 tests pass, 0 skipped |
+| GitHub CI | Green (analyze + test on push) |
+| Firebase Crashlytics | Integrated — degrades gracefully on sims |
+| iPhone 17 Pro | Running (Phase 7 deployed, all freezes resolved) |
+| iPhone 13 | Validated v1.0.0+10 — all 11 popup types, zero freezes |
+| iPad Air 11" M4 | Running (Phase 7 deployed, all freezes resolved) |
+| Android API 36 | Running (Phase 7 deployed, full functionality) |
 
 ## Bundle ID
 
@@ -22,10 +23,11 @@
 
 | Metric | Value |
 |--------|-------|
-| AAB size | 57 MB |
-| IPA size | 30 MB |
-| DB schema | 6 core tables |
-| Dead code | ~10 MB assets + ~1,280 lines AI/RevenueCat code removed |
+| AAB size | 60.7 MB |
+| IPA size | 33.4 MB |
+| DB schema | v19 with 6 core tables |
+| Habit library | 54 habits (CSV-based), 12 categories |
+| Deployment cycle | kill → uninstall → rebuild → fresh install (Lesson #11) |
 
 ---
 
@@ -34,35 +36,24 @@
 | Phase | Status | Key Deliverable |
 |---|---|---|
 | 1–3 | Signed off | Branding, backup/restore, localization, dark mode |
-| 4 | Complete | Tags, export, share, analytics (320 tests) |
+| 4 | Complete | Tags, export, share, analytics |
 | 5 | Complete | AdMob, IAP, CI/CD, builds protocol, Firebase |
-| 6 | Complete | DB cleanup (v18), default categories, perf baseline |
-| **7** | **In progress** | **UI simplification — 3-tab nav, habit→note dialog** |
+| 6 | Complete | DB cleanup, default categories, perf baseline |
+| **7** | **Complete** | **3-tab nav, onboarding, 11 popup types, 54-habit library** |
 
 ---
 
-## Phase 7 Current State
+## Phase 7 Deliverables
 
-### Done ✅
-
-| Item | Feature | Lines Changed |
-|------|---------|---------------|
-| 28a | 5→3 tabs: Daily, Tallies, Settings | app.dart (rewrite) |
-| 28b | Tallies 4→2 sub-tabs: Habits + Notes | cherished_memory_screen.dart |
-| 29 | RoutineNoteDialog — tap habit → note input | routine_note_dialog.dart (new, 151 lines) |
-| 30 | Mood jar removed from Daily | home_screen.dart (-110 lines) |
-| 31 | Habit notes auto-tagged (category + habit name) | routine_note_dialog.dart |
-
-### Remaining 🔲
-
-| Item | What | Effort |
-|------|------|--------|
-| P7.1 | Rewrite 2 skipped habit-tap widget tests | 2h |
-| P7.2 | Remove dead classes from cherished_memory_screen (safe sed pass) | 1h |
-| P7.3 | Remove JarProvider + EmojiJarWidget dead code | 1h |
-| P7.4 | Add entry_metadata field to link note→routine | 2h |
-| P7.5 | "Skip" button on writing habits should not check off habit | 1h |
-| P7.6 | Release build (AAB + IPA) for beta/testing | 1h |
+| # | Feature | Status |
+|---|---------|--------|
+| 7a | Foundation — Routine model v2, v19 schema, 54 habits, 12 categories | Done |
+| 7b | Onboarding flow — 3 screens + full library browser + startup gate | Done ✅ |
+| 7c | Popup factory — 11 tracking types dispatched by `trackingUiType` | Done |
+| 7d | Tag system — habit name from metadata, free-form tags, backup/restore | Done |
+| P1 | First-time tooltips per tracking type | Done |
+| P1 | Help panel bottom sheet | Done |
+| P1 | Free-form tag input on popups | Done |
 
 ---
 
@@ -71,27 +62,50 @@
 ```
 [ Daily ]  [ Tallies ]  [ Settings ]
     │           │
-    │           ├── Habits (charts, streaks, completion, tags)
-    │           └── Notes  (search, browse, filter habit notes)
+    │           ├── Habits (charts, streaks, completion)
+    │           └── Notes  (search, browse, filter)
     │
-    └── Calendar + Habit Checklist (tap → note dialog)
+    └── Calendar + Habit Checklist (tap → type-specific popup)
 ```
+
+---
 
 ## Features
 
 | Feature | Status |
 |---------|--------|
-| Daily — calendar, habit checklist, tap→note flow | Full (Phase 7) |
-| Tallies — Habits + Notes sub-tabs | Full (Phase 7) |
-| Settings — General, Tags, Habit Build | Full |
+| Daily — calendar, habit checklist, 11 type-specific popups | Full |
+| Tallies — Habits + Notes sub-tabs | Full |
+| Settings — General, Tags, Habit Build, Backup/Restore | Full |
+| Onboarding — 3-screen flow with 54-habit library | Full ✅ |
 | Tag management — categories, bulk ops, auto-suggest | Full |
 | Export — CSV + PDF with date range picker | Full |
 | Voice reminders | Full |
 | Bilingual UI (EN/ZH) | Full |
 | Dark mode | Full |
-| Backup/Restore | Full |
+| Backup/Restore — ZIP export/import, clear-before-restore | Full |
 | AdMob banners + Remove Ads IAP ($3.99) | Full |
 | Firebase Crashlytics | Deployed (degraded on sims) |
+
+---
+
+## Remaining Work
+
+| Priority | Item | Effort |
+|----------|------|--------|
+| P2 | `in_app_purchase` Android implementation | 2h |
+| P2 | Widget extensions (iOS/Android home screen) | 3h |
+| P2 | Split `cherished_memory_screen.dart` (refactor) | 2h |
+| — | Apple Watch companion | **Deferred** |
+
+---
+
+## Known Issues
+
+| # | Description | Platform | Severity |
+|---|-------------|----------|----------|
+| 1 | iOS 26 simulator with clipboard content: `UIPasteboard.hasStrings` blocks indefinitely (OS bug, not our code) | Simulator only | — |
+| 2 | Android `in_app_purchase` not implemented | Android | P2 |
 
 ## Documents
 
@@ -104,9 +118,9 @@
 | `docs/BUILD_TEST_VC_RULES.md` | Build, test, VC rules |
 | `docs/GAP_ANALYSIS.md` | Process gaps + roadmap |
 | `docs/BUSINESS_DECISIONS_RECORD.md` | All decisions + AdMob/IAP values |
-| `docs/PHASE5_PLAN.md` | Infrastructure plan |
-| `docs/PHASE6_PLAN.md` | Polish + cleanup plan |
-| `docs/PHASE6_ITEM23_REDESIGN.md` | File split SWOT |
 | `docs/PHASE7_PLAN.md` | UI simplification plan |
 | `docs/FIREBASE_SETUP.md` | Firebase setup guide |
 | `docs/APP_STORE_DESCRIPTION.md` | Store listing |
+| `docs/RCA_IOS_ONBOARDING_BUTTONS.md` | iOS onboarding freeze RCA |
+| `docs/Stalio — Popup UI Component Design Specification/` | Popup UI specs |
+| `docs/Stalio onboarding flow/` | Onboarding flow design |

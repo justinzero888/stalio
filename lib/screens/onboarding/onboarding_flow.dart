@@ -17,14 +17,14 @@ class OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<OnboardingFlow> {
   int _currentPage = 0;
   late Set<String> _selectedHabitIds;
-  List<Routine> _habitList = const [];
   bool _showingLibrary = false;
+  // Working copy of selections during library browsing; committed on Save.
+  Set<String> _libraryWorkingIds = {};
 
   @override
   void initState() {
     super.initState();
     _selectedHabitIds = _defaultBundleIds.toSet();
-    _habitList = context.read<RoutineProvider>().routines;
   }
 
   static const _defaultBundleIds = {
@@ -50,26 +50,63 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     widget.onComplete();
   }
 
+  Future<void> _openHabitLibrary() async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    setState(() {
+      _libraryWorkingIds = _selectedHabitIds.toSet();
+      _showingLibrary = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_habitList.isEmpty) {
-      _habitList = context.read<RoutineProvider>().routines;
-    }
+    final habitList = context.watch<RoutineProvider>().routines;
+    final theme = Theme.of(context);
+    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
 
-    // Show the habit library as an inline widget swap — no Navigator.push,
-    // no ModalBarrier. On iOS, pushing a route mid-gesture installs the barrier
-    // before the route content is positioned, causing it to absorb all touches
-    // and make the app appear frozen. A setState swap sidesteps the issue
-    // entirely.
+    // Always return a Scaffold so Flutter reuses the element across the
+    // library/select transition — only appBar and body change. Returning a
+    // different widget type (_HabitLibraryScreen) would force Flutter to
+    // unmount the entire Scaffold subtree and remount a new one, which
+    // disrupts iOS's gesture dispatcher and causes the "frozen screen" bug.
     if (_showingLibrary) {
-      return _HabitLibraryScreen(
-        routines: _habitList,
-        selectedIds: _selectedHabitIds,
-        onSave: (ids) => setState(() {
-          _selectedHabitIds = ids;
-          _showingLibrary = false;
-        }),
-        onBack: () => setState(() => _showingLibrary = false),
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          leading: BackButton(
+            onPressed: () => setState(() => _showingLibrary = false),
+          ),
+          title: Text(isZh ? '所有习惯' : 'All Habits'),
+          actions: [
+            TextButton(
+              onPressed: () => setState(() {
+                _selectedHabitIds = _libraryWorkingIds;
+                _showingLibrary = false;
+              }),
+              child: Text(
+                isZh ? '保存' : 'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: _HabitLibraryBody(
+            routines: habitList,
+            selectedIds: _libraryWorkingIds,
+            onToggle: (id) => setState(() {
+              if (_libraryWorkingIds.contains(id)) {
+                _libraryWorkingIds.remove(id);
+              } else {
+                _libraryWorkingIds.add(id);
+              }
+            }),
+          ),
+        ),
       );
     }
 
@@ -77,7 +114,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       _WelcomeScreen(onGetStarted: () => _goToPage(1)),
       _HowItWorksScreen(onSelectHabits: () => _goToPage(2)),
       _SelectHabitsScreen(
-        routines: _habitList,
+        routines: habitList,
         selectedIds: _selectedHabitIds,
         onToggle: (id) => setState(() {
           if (_selectedHabitIds.contains(id)) {
@@ -92,15 +129,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: screens[_currentPage],
       ),
     );
-  }
-
-  void _openHabitLibrary() {
-    setState(() => _showingLibrary = true);
   }
 }
 
@@ -584,29 +617,29 @@ class _HabitToggleTile extends StatelessWidget {
   }
 }
 
-// ─── Full Habit Library ─────────────────────────────────────────────────────────
+// ─── Full Habit Library (body only — AppBar lives in _OnboardingFlowState) ─────
 
-class _HabitLibraryScreen extends StatefulWidget {
-  final Set<String> selectedIds;
+class _HabitLibraryBody extends StatefulWidget {
   final List<Routine> routines;
-  final void Function(Set<String> ids) onSave;
-  final VoidCallback onBack;
+  final Set<String> selectedIds;
+  final void Function(String id) onToggle;
 
-  const _HabitLibraryScreen({
-    required this.selectedIds,
+  const _HabitLibraryBody({
     required this.routines,
-    required this.onSave,
-    required this.onBack,
+    required this.selectedIds,
+    required this.onToggle,
   });
 
   @override
-  State<_HabitLibraryScreen> createState() => _HabitLibraryScreenState();
+  State<_HabitLibraryBody> createState() => _HabitLibraryBodyState();
 }
 
-class _HabitLibraryScreenState extends State<_HabitLibraryScreen> {
-  late Set<String> _selectedIds;
+class _HabitLibraryBodyState extends State<_HabitLibraryBody> {
   String _searchQuery = '';
   String? _categoryFilter;
+  // TextField is only mounted when the user taps the search bar, so the
+  // iOS UIPasteboard.hasStrings call never blocks the library-open frame.
+  bool _searchActive = false;
 
   static const _categoryGroups = [
     ('Health & Body', '身'),
@@ -615,12 +648,6 @@ class _HabitLibraryScreenState extends State<_HabitLibraryScreen> {
     ('Financial', '财'),
     ('Home & Environment', '居'),
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedIds = widget.selectedIds.toSet();
-  }
 
   List<Routine> _filteredRoutines() {
     var list = widget.routines
@@ -645,107 +672,110 @@ class _HabitLibraryScreenState extends State<_HabitLibraryScreen> {
     final theme = Theme.of(context);
     final filtered = _filteredRoutines();
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: widget.onBack,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: _searchActive
+              ? TextField(
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: isZh ? '搜索习惯...' : 'Search habits...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    isDense: true,
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () => setState(() {
+                        _searchActive = false;
+                        _searchQuery = '';
+                      }),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(80)),
+                    ),
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                )
+              : GestureDetector(
+                  onTap: () => setState(() => _searchActive = true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: theme.colorScheme.outlineVariant.withAlpha(80)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, size: 20, color: theme.colorScheme.onSurface.withAlpha(120)),
+                        const SizedBox(width: 8),
+                        Text(
+                          isZh ? '搜索习惯...' : 'Search habits...',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withAlpha(120),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
         ),
-        title: Text(isZh ? '所有习惯' : 'All Habits'),
-        actions: [
-          TextButton(
-            onPressed: () => widget.onSave(_selectedIds),
-            child: Text(
-              isZh ? '保存' : 'Save',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: isZh ? '搜索习惯...' : 'Search habits...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(80)),
+        SizedBox(
+          height: 44,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: FilterChip(
+                  label: Text(isZh ? '全部' : 'All'),
+                  selected: _categoryFilter == null,
+                  onSelected: (_) => setState(() => _categoryFilter = null),
                 ),
               ),
-              onChanged: (v) => setState(() => _searchQuery = v),
-            ),
-          ),
-          SizedBox(
-            height: 44,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
+              for (final (en, cn) in _categoryGroups)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: FilterChip(
-                    label: Text(isZh ? '全部' : 'All'),
-                    selected: _categoryFilter == null,
-                    onSelected: (_) => setState(() => _categoryFilter = null),
+                    label: Text(isZh ? '$cn $en' : en),
+                    selected: _categoryFilter == en,
+                    onSelected: (_) => setState(() => _categoryFilter = en),
                   ),
                 ),
-                for (final (en, cn) in _categoryGroups)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: FilterChip(
-                      label: Text(isZh ? '$cn $en' : en),
-                      selected: _categoryFilter == en,
-                      onSelected: (_) => setState(() => _categoryFilter = en),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-            child: Row(
-              children: [
-                Text(
-                  isZh ? '已选：${_selectedIds.length}' : 'Selected: ${_selectedIds.length}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          child: Row(
+            children: [
+              Text(
+                isZh ? '已选：${widget.selectedIds.length}' : 'Selected: ${widget.selectedIds.length}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: filtered.length,
-              itemBuilder: (ctx, i) {
-                final routine = filtered[i];
-                final isSelected = _selectedIds.contains(routine.id);
-                return _HabitToggleTile(
-                  routine: routine,
-                  isSelected: isSelected,
-                  isZh: isZh,
-                  onToggle: () => setState(() {
-                    if (isSelected) {
-                      _selectedIds.remove(routine.id);
-                    } else {
-                      _selectedIds.add(routine.id);
-                    }
-                  }),
-                );
-              },
-            ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: filtered.length,
+            itemBuilder: (ctx, i) {
+              final routine = filtered[i];
+              return _HabitToggleTile(
+                routine: routine,
+                isSelected: widget.selectedIds.contains(routine.id),
+                isZh: isZh,
+                onToggle: () => widget.onToggle(routine.id),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
