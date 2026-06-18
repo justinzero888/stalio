@@ -1214,6 +1214,7 @@ class _RoutineDialogWidgetState extends State<_RoutineDialogWidget> {
       }
     }
 
+    if (!mounted) return;
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

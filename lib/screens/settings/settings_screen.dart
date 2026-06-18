@@ -8,6 +8,7 @@ import '../../providers/locale_provider.dart';
 import '../../providers/tag_provider.dart';
 import '../../providers/tag_category_provider.dart';
 import '../../providers/routine_provider.dart';
+import '../../providers/entry_provider.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/services/export_service.dart';
 import '../../core/services/ad_service.dart';
@@ -18,6 +19,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 import '../../core/services/voice_notification_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
 import '../../core/constants/legal_content.dart';
 import '../routine/routine_screen.dart';
 
@@ -161,11 +164,7 @@ class _GeneralTab extends StatefulWidget {
           leading: const Icon(Icons.archive_outlined),
           title: Text(isZh ? '完整备份 (ZIP)' : 'Full Backup (ZIP)'),
           subtitle: Text(isZh ? '包含所有数据和多媒体' : 'All data and media'),
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(isZh ? '备份功能开发中...' : 'Backup coming soon...')),
-            );
-          },
+          onTap: () => _exportFullBackup(context),
         ),
         ListTile(
           leading: const Icon(Icons.table_chart_outlined),
@@ -183,11 +182,7 @@ class _GeneralTab extends StatefulWidget {
           leading: const Icon(Icons.restore_outlined),
           title: Text(isZh ? '恢复数据' : 'Restore Data'),
           subtitle: Text(isZh ? '从备份文件导入' : 'Import from backup file'),
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(isZh ? '恢复功能开发中...' : 'Restore coming soon...')),
-            );
-          },
+          onTap: () => _restoreFromBackup(context),
         ),
         const Divider(),
         _sectionHeader(isZh ? '关于' : 'About'),
@@ -251,6 +246,99 @@ class _GeneralTab extends StatefulWidget {
     );
   }
 
+  Future<void> _exportFullBackup(BuildContext ctx) async {
+    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
+    try {
+      final exportService = ExportService(context.read<StorageService>());
+      final path = await exportService.exportAll();
+      final file = File(path);
+      if (file.existsSync()) {
+        await exportService.shareFile(path);
+      }
+    } catch (e) {
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text(isZh ? '备份失败' : 'Backup failed')),
+        );
+      }
+    }
+  }
+
+  Future<void> _restoreFromBackup(BuildContext ctx) async {
+    final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      final files = docDir.listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.json') || f.path.endsWith('.zip'))
+          .toList()
+        ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+
+      if (files.isEmpty) {
+        if (ctx.mounted) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(content: Text(isZh ? '没有找到备份文件' : 'No backup files found')),
+          );
+        }
+        return;
+      }
+
+      if (!ctx.mounted) return;
+      final selected = await showDialog<File>(
+        context: ctx,
+        builder: (dCtx) => AlertDialog(
+          title: Text(isZh ? '选择备份文件' : 'Select Backup'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: files.length,
+              itemBuilder: (_, i) => ListTile(
+                title: Text(files[i].path.split('/').last),
+                subtitle: Text(DateFormat('MMM d, HH:mm').format(files[i].lastModifiedSync())),
+                onTap: () => Navigator.pop(dCtx, files[i]),
+              ),
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(dCtx), child: Text(isZh ? '取消' : 'Cancel'))],
+        ),
+      );
+
+      if (selected == null || !ctx.mounted) return;
+
+      final confirmed = await showDialog<bool>(
+        context: ctx,
+        builder: (dCtx) => AlertDialog(
+          title: Text(isZh ? '确认恢复' : 'Confirm Restore'),
+          content: Text(isZh ? '恢复数据将覆盖当前所有数据。确定继续？' : 'Restoring will overwrite all current data. Continue?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dCtx, false), child: Text(isZh ? '取消' : 'Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(dCtx, true), child: Text(isZh ? '恢复' : 'Restore')),
+          ],
+        ),
+      );
+      if (confirmed != true || !ctx.mounted) return;
+
+      final storage = ctx.read<StorageService>();
+      await storage.restoreFromBackup(selected);
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text(isZh ? '数据恢复成功' : 'Restore complete')),
+        );
+        ctx.read<RoutineProvider>().loadRoutines();
+        ctx.read<EntryProvider>().loadEntries();
+        ctx.read<TagProvider>().loadTags();
+        ctx.read<TagCategoryProvider>().loadCategories();
+      }
+    } catch (e) {
+      if (ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text(isZh ? '恢复失败' : 'Restore failed')),
+        );
+      }
+    }
+  }
+
   void _showDateRangePicker(BuildContext ctx) {
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     showDialog(context: ctx, builder: (dCtx) => AlertDialog(
@@ -283,6 +371,7 @@ class _GeneralTab extends StatefulWidget {
     final isZh = context.read<LocaleProvider>().locale.languageCode == 'zh';
     final now = DateTime.now();
     final picked = await showDateRangePicker(context: ctx, firstDate: DateTime(2020), lastDate: now, initialDateRange: DateTimeRange(start: now.subtract(const Duration(days: 30)), end: now));
+    if (!ctx.mounted) return;
     if (picked != null) {
       if (isCsv) {
         _exportCsvData(ctx, startDate: picked.start, endDate: picked.end);
@@ -304,7 +393,8 @@ class _GeneralTab extends StatefulWidget {
       Navigator.of(ctx).pop();
       await exportService.shareFile(filePath, subject: 'Stalio CSV Export', text: isZh ? 'Stalio 数据导出 (CSV)' : 'Stalio data export (CSV)');
     } catch (e) {
-      if (ctx.mounted) Navigator.of(ctx).pop();
+      if (!ctx.mounted) return;
+      Navigator.of(ctx).pop();
       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(isZh ? '导出失败: $e' : 'Export failed: $e'), duration: const Duration(seconds: 4)));
     }
   }
@@ -321,7 +411,8 @@ class _GeneralTab extends StatefulWidget {
       Navigator.of(ctx).pop();
       await exportService.shareFile(filePath, subject: 'Stalio PDF Export', text: isZh ? 'Stalio 数据导出 (PDF)' : 'Stalio data export (PDF)');
     } catch (e) {
-      if (ctx.mounted) Navigator.of(ctx).pop();
+      if (!ctx.mounted) return;
+      Navigator.of(ctx).pop();
       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(isZh ? '导出失败: $e' : 'Export failed: $e'), duration: const Duration(seconds: 4)));
     }
   }
